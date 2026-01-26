@@ -2,10 +2,9 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

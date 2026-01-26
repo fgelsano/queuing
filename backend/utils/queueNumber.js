@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../db.js';
 
 /**
  * Generate a queue number with format: MMDDYY-XXXX

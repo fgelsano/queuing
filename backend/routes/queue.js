@@ -1,10 +1,9 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.js';
 import { generateQueueNumber } from '../utils/queueNumber.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Helper function to auto-resolve old NOW_SERVING entries
 async function autoResolveOldServingEntries() {

@@ -14,6 +14,13 @@ module.exports = {
     merge_logs: true,
     autorestart: true,
     watch: false,
-    max_memory_restart: '500M'
+    max_memory_restart: '500M',
+    // Prevent restart loops
+    max_restarts: 10,
+    min_uptime: '10s',
+    // Kill timeout to prevent hanging processes
+    kill_timeout: 5000,
+    // Wait for graceful shutdown
+    shutdown_with_message: true
   }]
 };

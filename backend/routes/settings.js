@@ -3,11 +3,10 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

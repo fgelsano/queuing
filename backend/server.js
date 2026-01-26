@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
+import prisma from './db.js';
 import authRoutes from './routes/auth.js';
 import queueRoutes from './routes/queue.js';
 import staffRoutes from './routes/staff.js';
@@ -19,7 +19,6 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const prisma = new PrismaClient();
 
 const app = express();
 const PORT = process.env.PORT || 5002;

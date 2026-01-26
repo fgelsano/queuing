@@ -1,10 +1,9 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../db.js';
 import { authenticateToken, requireStaff } from '../middleware/auth.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 router.use(authenticateToken);
 router.use(requireStaff);
