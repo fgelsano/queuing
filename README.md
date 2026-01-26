@@ -1,108 +1,45 @@
 # Web-based Queuing System
 
-A comprehensive web-based queuing system with three main roles: Client, Staff, and Admin.
+The application is a web-based queuing system that lets organizations manage walk-in clients more efficiently while giving clients the freedom to leave the waiting area without losing their place in line.
 
-## Features
+At its core, the system replaces manual, paper-based queue numbers with a fully digital, role-based platform:
 
-### Client Role (No Login Required)
-- QR code access to join queue
-- Mobile-first registration form
-- Real-time queue monitoring
-- Success page with queue status
-- Public monitoring page with video player
+- **Clients** scan a QR code, enter their name and concern, and instantly receive a uniquely formatted queue number (e.g., `012526-0001`, which resets daily). They are then taken to a success page that not only shows their own number and status, but also displays all currently open service windows and the queue number each window is serving in real time. This same page can be opened on their phone, so they can monitor progress from anywhere.
 
-### Staff Role
-- Secure authentication
-- Window assignment
-- Queue management with priority handling
-- Analytics and reporting
-- Real-time dashboard updates
+- **Staff** log in, operate specific windows, see the list of waiting clients, and manually prioritize seniors, PWDs, and pregnant clients when needed. They manage the flow of "waiting → being served → served / skipped" and see their own performance stats and charts based on the clients they've handled.
 
-### Admin Role
-- Full system management
-- Staff account management
-- Window configuration
-- Category and subcategory management
-- Comprehensive reporting and analytics
+- **Admins** configure windows, define client concern categories and sub-concerns, manage staff accounts, and run department-wide reports with date and category filters. They effectively control how the entire queuing system behaves day to day.
+
+## The Problem It Solves
+
+The key problem this system solves is the current pain point where clients are forced to physically stay in the waiting area for long periods because they fear missing their number and losing their turn. Even if they already have a number, they feel "tied" to the counter.
+
+This application removes that anxiety by combining three ideas:
+
+1. **Public, live queue visibility**: The success page and public monitoring page show all active windows and the numbers currently being served, updated every 1–3 seconds. Clients can check from their phones instead of watching a physical board or listening for announcements.
+
+2. **Persistent client queue info in the browser**: The client's queue number and details are stored in `localStorage`, so if they accidentally close or refresh the browser, their number isn't lost. The system automatically invalidates this local data when a new day starts, matching the daily reset of queue numbers.
+
+3. **Window-based, dynamic service view**: Only active windows are shown, each as a card in a responsive layout. Clients can tell at a glance how many windows are serving and which numbers are currently being processed.
+
+Together, these features allow clients to stay in the queue while running other errands outside—they keep their number, can always see where the queue stands, and can confidently time their return without worrying about breaking the line.
+
+On top of that, the built-in video player that auto-plays and loops locally stored movies on the public page enhances the on-site waiting experience for anyone who does choose to stay, while the analytics for staff and admins add operational value beyond a simple "take-a-number" system.
+
+Overall, it's impressive because it takes a familiar, everyday process and elevates it into a smart, data-driven, and client-friendly experience: highly usable on mobile, aware of priority policies, rich in reporting, and thoughtfully designed to reduce frustration for both clients and staff.
 
 ## Tech Stack
 
 - **Frontend**: React 18 with Vite
 - **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Prisma ORM
+- **Database**: SQLite/PostgreSQL with Prisma ORM
 - **Charts**: Recharts
 - **Authentication**: JWT
 
-## Setup Instructions
+## Documentation
 
-### Prerequisites
-
-- Node.js 18+ and npm
-- PostgreSQL database
-
-### Installation
-
-1. Clone the repository and install dependencies:
-
-```bash
-npm run install:all
-```
-
-2. Set up environment variables:
-
-Create a `.env` file in the `backend` directory:
-
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/queing_db"
-JWT_SECRET="your-secret-key-here"
-PORT=5000
-```
-
-3. Set up the database:
-
-```bash
-cd backend
-npx prisma generate
-npx prisma migrate dev
-```
-
-4. Create an admin account (optional - you can also create one through the admin interface):
-
-You can create an admin account by running a script or directly through the database. For now, you can use Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
-Or create one programmatically by adding a seed script.
-
-5. Add videos (optional):
-
-Place video files (mp4, webm, ogg, mov, avi) in the `backend/videos` directory. The system will automatically detect and serve them.
-
-### Running the Application
-
-1. Start both frontend and backend:
-
-```bash
-npm run dev
-```
-
-This will start:
-- Backend server on http://localhost:5000
-- Frontend dev server on http://localhost:3000
-
-2. Or run them separately:
-
-```bash
-# Backend
-cd backend
-npm run dev
-
-# Frontend (in another terminal)
-cd frontend
-npm run dev
-```
+- **Setup Guide**: See [SETUP.md](./SETUP.md) for local development setup instructions
+- **Deployment Guide**: See [DEPLOYMENT.md](./DEPLOYMENT.md) for production deployment instructions
 
 ## Usage
 
