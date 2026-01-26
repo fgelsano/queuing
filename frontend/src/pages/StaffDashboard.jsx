@@ -446,10 +446,10 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
       background: isServing ? '#eff6ff' : 'white',
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'start',
-      gap: '16px',
+      alignItems: 'flex-start',
+      gap: '20px',
     }}>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 auto', minWidth: 0 }}>
         <div style={{
           fontSize: '18px',
           fontWeight: '700',
@@ -461,7 +461,7 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
         <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>
           {entry.clientName}
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
           <ClientTypeBadge clientType={entry.clientType} />
           <span style={{ fontSize: '12px', color: '#64748b' }}>
             {entry.category.name}
@@ -472,13 +472,19 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
           Joined: {new Date(entry.joinedAt).toLocaleTimeString()}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', flexShrink: 0 }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        flexDirection: 'column', 
+        flexShrink: 0,
+        width: '150px',
+      }}>
         {!isServing ? (
           <Button
             variant="primary"
             icon={Play}
             onClick={() => onServe(entry.id)}
-            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
+            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap', width: '100%' }}
           >
             Start Serving
           </Button>
@@ -487,7 +493,7 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
             variant="success"
             icon={CheckCircle}
             onClick={() => onComplete(entry.id)}
-            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
+            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap', width: '100%' }}
           >
             Mark as Served
           </Button>
@@ -496,7 +502,7 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
           variant="danger"
           icon={SkipForward}
           onClick={() => onSkip(entry.id)}
-          style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
+          style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap', width: '100%' }}
         >
           Skip
         </Button>
