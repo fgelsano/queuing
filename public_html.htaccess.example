@@ -1,5 +1,5 @@
 # .htaccess file for Queuing System
-# Place this file in your public_html directory
+# Place this file in your domain's document root directory
 # Rename it to .htaccess (remove .example)
 
 # Enable Rewrite Engine

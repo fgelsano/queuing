@@ -444,44 +444,41 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
       borderRadius: '8px',
       marginBottom: '12px',
       background: isServing ? '#eff6ff' : 'white',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'start',
+      gap: '16px',
     }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'start',
-        marginBottom: '8px',
-      }}>
-        <div>
-          <div style={{
-            fontSize: '18px',
-            fontWeight: '700',
-            color: '#2563eb',
-            marginBottom: '4px',
-          }}>
-            {entry.queueNumber}
-          </div>
-          <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>
-            {entry.clientName}
-          </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-            <ClientTypeBadge clientType={entry.clientType} />
-            <span style={{ fontSize: '12px', color: '#64748b' }}>
-              {entry.category.name}
-              {entry.subCategory && ` - ${entry.subCategory.name}`}
-            </span>
-          </div>
-          <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-            Joined: {new Date(entry.joinedAt).toLocaleTimeString()}
-          </div>
+      <div style={{ flex: 1 }}>
+        <div style={{
+          fontSize: '18px',
+          fontWeight: '700',
+          color: '#2563eb',
+          marginBottom: '4px',
+        }}>
+          {entry.queueNumber}
+        </div>
+        <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>
+          {entry.clientName}
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+          <ClientTypeBadge clientType={entry.clientType} />
+          <span style={{ fontSize: '12px', color: '#64748b' }}>
+            {entry.category.name}
+            {entry.subCategory && ` - ${entry.subCategory.name}`}
+          </span>
+        </div>
+        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+          Joined: {new Date(entry.joinedAt).toLocaleTimeString()}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', flexDirection: 'column', flexShrink: 0 }}>
         {!isServing ? (
           <Button
             variant="primary"
             icon={Play}
             onClick={() => onServe(entry.id)}
-            style={{ fontSize: '12px', padding: '8px 16px' }}
+            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
           >
             Start Serving
           </Button>
@@ -490,7 +487,7 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
             variant="success"
             icon={CheckCircle}
             onClick={() => onComplete(entry.id)}
-            style={{ fontSize: '12px', padding: '8px 16px' }}
+            style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
           >
             Mark as Served
           </Button>
@@ -499,7 +496,7 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
           variant="danger"
           icon={SkipForward}
           onClick={() => onSkip(entry.id)}
-          style={{ fontSize: '12px', padding: '8px 16px' }}
+          style={{ fontSize: '12px', padding: '8px 16px', whiteSpace: 'nowrap' }}
         >
           Skip
         </Button>
