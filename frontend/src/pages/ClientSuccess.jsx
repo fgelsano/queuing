@@ -37,14 +37,18 @@ export default function ClientSuccess() {
 
   const loadData = async () => {
     try {
+      // Always read the latest stored entry so polling continues to work
+      // even though the interval callback closes over an older React render.
+      const currentEntry = getQueueEntry() || queueEntry;
+
       // Load queue entry from server
-      if (queueEntry?.queueNumber) {
-        const res = await api.get(`/queue/${queueEntry.queueNumber}`);
+      if (currentEntry?.queueNumber) {
+        const res = await api.get(`/queue/${currentEntry.queueNumber}`);
         const entry = res.data.queueEntry;
         
         // Update stored entry
         const updated = {
-          ...queueEntry,
+          ...currentEntry,
           status: entry.status,
         };
         setQueueEntry(updated);
@@ -59,7 +63,7 @@ export default function ClientSuccess() {
         // Calculate people ahead
         if (entry.status === 'WAITING') {
           try {
-            const aheadRes = await api.get(`/queue/${queueEntry.queueNumber}/ahead`);
+            const aheadRes = await api.get(`/queue/${currentEntry.queueNumber}/ahead`);
             setPeopleAhead(aheadRes.data.peopleAhead || 0);
           } catch (error) {
             // Fallback to total waiting count if specific endpoint fails
@@ -95,7 +99,9 @@ export default function ClientSuccess() {
 
   const statusColors = {
     WAITING: { bg: '#fef3c7', color: '#92400e', text: 'Waiting' },
-    NOW_SERVING: { bg: '#dbeafe', color: '#1e40af', text: 'Now Serving' },
+    // When staff moves this queue number to NOW_SERVING,
+    // show \"Being served\" on the success page.
+    NOW_SERVING: { bg: '#dbeafe', color: '#1e40af', text: 'Being served' },
     SERVED: { bg: '#d1fae5', color: '#065f46', text: 'Served' },
     SKIPPED: { bg: '#fee2e2', color: '#991b1b', text: 'Skipped' },
   };
@@ -205,12 +211,13 @@ export default function ClientSuccess() {
           }}>
             Active Windows
           </h2>
-          <div style={{
-            display: 'grid',
-            gap: '16px',
-            maxWidth: '900px',
-          }}
-          className="grid-responsive">
+          <div
+            className="grid-responsive"
+            style={{
+              display: 'grid',
+              gap: '16px',
+            }}
+          >
             {windows.length > 0 ? (
               windows.map((window) => (
                 <WindowCard key={window.id} window={window} />

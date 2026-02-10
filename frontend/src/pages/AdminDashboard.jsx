@@ -220,6 +220,9 @@ export default function AdminDashboard() {
             align-items: flex-start !important;
             gap: 12px;
           }
+          .settings-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
         }
         @media (max-width: 480px) {
           .admin-stats-grid,
@@ -234,6 +237,10 @@ export default function AdminDashboard() {
           }
           .admin-cards-grid {
             grid-template-columns: repeat(3, 1fr) !important;
+          }
+          .settings-grid {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 16px;
           }
         }
       `}</style>
@@ -1997,45 +2004,44 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
               </button>
             </div>
 
-          <div className="admin-filter-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-            {/* Date Range */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                Start Date
-              </label>
-              <input
-                type="date"
-                value={tempFilters.startDate}
-                onChange={(e) => setTempFilters({ ...tempFilters, startDate: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '2px solid #e2e8f0',
-                  fontSize: '14px',
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                End Date
-              </label>
-              <input
-                type="date"
-                value={tempFilters.endDate}
-                onChange={(e) => setTempFilters({ ...tempFilters, endDate: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: '2px solid #e2e8f0',
-                  fontSize: '14px',
-                }}
-              />
-            </div>
-
-            {/* Staff Filter */}
-            <div style={{ position: 'relative' }} ref={staffDropdownRef}>
+          <div className="admin-filter-grid" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Row 1: Start Date 25%, End Date 25%, Staff 50% */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: '20px', alignItems: 'end' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={tempFilters.startDate}
+                  onChange={(e) => setTempFilters({ ...tempFilters, startDate: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={tempFilters.endDate}
+                  onChange={(e) => setTempFilters({ ...tempFilters, endDate: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+              <div style={{ position: 'relative' }} ref={staffDropdownRef}>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
                 Staff
               </label>
@@ -2159,13 +2165,15 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
                   })}
                 </div>
               )}
+              </div>
             </div>
 
-            {/* Category Filter */}
-            <div style={{ position: 'relative' }} ref={categoryDropdownRef}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                Categories
-              </label>
+            {/* Row 2: Categories, Client Types */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'end' }}>
+              <div style={{ position: 'relative' }} ref={categoryDropdownRef}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  Categories
+                </label>
               <div
                 onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
                 style={{
@@ -2286,13 +2294,13 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
                   })}
                 </div>
               )}
-            </div>
+              </div>
 
-            {/* Client Type Filter */}
-            <div style={{ position: 'relative' }} ref={clientTypeDropdownRef}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                Client Types
-              </label>
+              {/* Client Type Filter */}
+              <div style={{ position: 'relative' }} ref={clientTypeDropdownRef}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  Client Types
+                </label>
               <div
                 onClick={() => setClientTypeDropdownOpen(!clientTypeDropdownOpen)}
                 style={{
@@ -2410,40 +2418,43 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
                   })}
                 </div>
               )}
+              </div>
             </div>
 
-            {/* Peak Hours Filter */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                Start Hour (Peak Hours)
-              </label>
-              <Select
-                value={tempFilters.startHour}
-                onChange={(e) => setTempFilters({ ...tempFilters, startHour: e.target.value })}
-              >
-                <option value="">All Hours</option>
-                {hours.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {String(hour).padStart(2, '0')}:00
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-                End Hour (Peak Hours)
-              </label>
-              <Select
-                value={tempFilters.endHour}
-                onChange={(e) => setTempFilters({ ...tempFilters, endHour: e.target.value })}
-              >
-                <option value="">All Hours</option>
-                {hours.map((hour) => (
-                  <option key={hour} value={hour}>
-                    {String(hour).padStart(2, '0')}:00
-                  </option>
-                ))}
-              </Select>
+            {/* Row 3: Start Hour, End Hour */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', alignItems: 'end' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  Start Hour (Peak Hours)
+                </label>
+                <Select
+                  value={tempFilters.startHour}
+                  onChange={(e) => setTempFilters({ ...tempFilters, startHour: e.target.value })}
+                >
+                  <option value="">All Hours</option>
+                  {hours.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {String(hour).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+                  End Hour (Peak Hours)
+                </label>
+                <Select
+                  value={tempFilters.endHour}
+                  onChange={(e) => setTempFilters({ ...tempFilters, endHour: e.target.value })}
+                >
+                  <option value="">All Hours</option>
+                  {hours.map((hour) => (
+                    <option key={hour} value={hour}>
+                      {String(hour).padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -2585,12 +2596,37 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
   const [uploading, setUploading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({ open: false });
   
+  // Ding sound state
+  const [dingFile, setDingFile] = useState(null);
+  const [currentDing, setCurrentDing] = useState(null);
+  const [uploadingDing, setUploadingDing] = useState(false);
+  const [dingConfirmDialog, setDingConfirmDialog] = useState({ open: false });
+  
+  // TTS voices state
+  const [ttsVoices, setTtsVoices] = useState([
+    { id: '', name: '' },
+    { id: '', name: '' },
+    { id: '', name: '' },
+  ]);
+  const [activeVoiceId, setActiveVoiceId] = useState('');
+  const [savingVoices, setSavingVoices] = useState(false);
+
+  // TTS announcement template
+  const [announcementTemplate, setAnnouncementTemplate] = useState('');
+  const [savingAnnouncementTemplate, setSavingAnnouncementTemplate] = useState(false);
+
   // Video folder state
   const [videoFolderPath, setVideoFolderPath] = useState('');
   const [savingVideoFolder, setSavingVideoFolder] = useState(false);
 
+  // Local tab state for settings subsections
+  const [settingsView, setSettingsView] = useState('branding'); // 'branding' | 'audio' | 'videos'
+
   useEffect(() => {
     loadCurrentLogo();
+    loadCurrentDing();
+    loadTtsVoices();
+    loadAnnouncementTemplate();
     loadVideoFolderPath();
   }, []);
 
@@ -2604,6 +2640,48 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
       console.error('Failed to load logo:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCurrentDing = async () => {
+    try {
+      const res = await api.get('/admin/settings/ding-sound');
+      if (res.data.dingSoundUrl) {
+        setCurrentDing(res.data.dingSoundUrl);
+      }
+    } catch (error) {
+      console.error('Failed to load ding sound:', error);
+    }
+  };
+
+  const loadTtsVoices = async () => {
+    try {
+      const res = await api.get('/admin/settings/tts-voices');
+      const voices = Array.isArray(res.data.voices) ? res.data.voices : [];
+      const padded = [...voices];
+      while (padded.length < 3) {
+        padded.push({ id: '', name: '' });
+      }
+      setTtsVoices(padded.slice(0, 3));
+
+      if (res.data.activeVoiceId) {
+        setActiveVoiceId(res.data.activeVoiceId);
+      } else if (voices[0]?.id) {
+        setActiveVoiceId(voices[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load TTS voices:', error);
+    }
+  };
+
+  const loadAnnouncementTemplate = async () => {
+    try {
+      const res = await api.get('/admin/settings/tts-announcement');
+      if (res.data.template) {
+        setAnnouncementTemplate(res.data.template);
+      }
+    } catch (error) {
+      console.error('Failed to load TTS announcement template:', error);
     }
   };
 
@@ -2679,6 +2757,60 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
     });
   };
 
+  const handleDingFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setDingFile(file);
+    }
+  };
+
+  const handleUploadDing = async (e) => {
+    e.preventDefault();
+    if (!dingFile) return;
+
+    setUploadingDing(true);
+    try {
+      const formData = new FormData();
+      formData.append('sound', dingFile);
+
+      const res = await api.post('/admin/settings/ding-sound', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setCurrentDing(res.data.dingSoundUrl);
+      setDingFile(null);
+      toastSuccess('Ding sound uploaded successfully!');
+    } catch (error) {
+      console.error('Failed to upload ding sound:', error);
+      toastError(error.response?.data?.error || 'Failed to upload ding sound');
+    } finally {
+      setUploadingDing(false);
+    }
+  };
+
+  const handleDeleteDing = async () => {
+    setDingConfirmDialog({
+      open: true,
+      title: 'Delete Ding Sound',
+      message: 'Are you sure you want to delete the current ding sound?',
+      onConfirm: async () => {
+        setDingConfirmDialog({ open: false });
+        try {
+          await api.delete('/admin/settings/ding-sound');
+          setCurrentDing(null);
+          setDingFile(null);
+          toastSuccess('Ding sound deleted successfully!');
+        } catch (error) {
+          console.error('Failed to delete ding sound:', error);
+          toastError(error.response?.data?.error || 'Failed to delete ding sound');
+        }
+      },
+      onCancel: () => setDingConfirmDialog({ open: false }),
+    });
+  };
+
   const handleSaveVideoFolder = async (e) => {
     e.preventDefault();
     if (!videoFolderPath.trim()) {
@@ -2700,6 +2832,115 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
     }
   };
 
+  const handlePreviewVoice = async (rowVoiceId) => {
+    const voiceId = typeof rowVoiceId === 'string' ? rowVoiceId.trim() : '';
+    if (!voiceId) {
+      toastError('Please enter a voice ID first');
+      return;
+    }
+
+    const previewText =
+      'Window 1 will now serve number 123, or John Doe.';
+
+    try {
+      const response = await api.post(
+        '/tts',
+        { text: previewText, voiceId },
+        { responseType: 'arraybuffer' }
+      );
+      const audioData = response.data;
+      if (!audioData) return;
+
+      const blob = new Blob([audioData], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      audio.play().catch((err) => {
+        console.error('Failed to play preview TTS audio:', err);
+      }).finally(() => {
+        URL.revokeObjectURL(url);
+      });
+    } catch (error) {
+      console.error('Failed to preview TTS voice:', error);
+      toastError('Failed to preview this voice. Please check your ElevenLabs settings.');
+    }
+  };
+
+  const handleVoiceFieldChange = (index, field, value) => {
+    setTtsVoices((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        [field]: value,
+      };
+      return next;
+    });
+  };
+
+  const handleSaveVoices = async (e) => {
+    e.preventDefault();
+    setSavingVoices(true);
+    try {
+      const payloadVoices = ttsVoices
+        .map((v) => ({
+          id: (v.id || '').trim(),
+          name: (v.name || '').trim(),
+        }))
+        .filter((v) => v.id);
+
+      if (payloadVoices.length === 0) {
+        toastError('Please enter at least one ElevenLabs voice ID');
+        setSavingVoices(false);
+        return;
+      }
+
+      const selectedActiveId =
+        activeVoiceId && payloadVoices.some((v) => v.id === activeVoiceId)
+          ? activeVoiceId
+          : payloadVoices[0].id;
+
+      const res = await api.post('/admin/settings/tts-voices', {
+        voices: payloadVoices,
+        activeVoiceId: selectedActiveId,
+      });
+
+      const savedVoices = Array.isArray(res.data.voices) ? res.data.voices : payloadVoices;
+      const padded = [...savedVoices];
+      while (padded.length < 3) {
+        padded.push({ id: '', name: '' });
+      }
+      setTtsVoices(padded.slice(0, 3));
+      setActiveVoiceId(res.data.activeVoiceId || selectedActiveId);
+
+      toastSuccess('TTS voices updated successfully!');
+    } catch (error) {
+      console.error('Failed to save TTS voices:', error);
+      toastError(error.response?.data?.error || 'Failed to save TTS voices');
+    } finally {
+      setSavingVoices(false);
+    }
+  };
+
+  const handleSaveAnnouncementTemplate = async (e) => {
+    e.preventDefault();
+    const value = (announcementTemplate || '').trim();
+    if (!value) {
+      toastError('Announcement template cannot be empty');
+      return;
+    }
+
+    setSavingAnnouncementTemplate(true);
+    try {
+      await api.post('/admin/settings/tts-announcement', { template: value });
+      toastSuccess('Announcement template updated successfully!');
+    } catch (error) {
+      console.error('Failed to save announcement template:', error);
+      toastError(error.response?.data?.error || 'Failed to save announcement template');
+    } finally {
+      setSavingAnnouncementTemplate(false);
+    }
+  };
+
   if (loading) {
     return <Loading />;
   }
@@ -2707,16 +2948,62 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
   return (
     <div>
       <ConfirmDialog {...confirmDialog} />
-      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '24px' }}>
-        Branding Settings
+      <ConfirmDialog {...dingConfirmDialog} />
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
+        Settings
       </h2>
 
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}>
+      {/* Settings subtabs */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '8px',
+          marginBottom: '24px',
+          borderBottom: '1px solid #e2e8f0',
+          paddingBottom: '4px',
+          overflowX: 'auto',
+        }}
+      >
+        {[
+          { id: 'branding', label: 'Branding' },
+          { id: 'audio', label: 'Audio & TTS' },
+          { id: 'videos', label: 'Videos' },
+        ].map((tab) => {
+          const isActive = settingsView === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSettingsView(tab.id)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '9999px',
+                border: 'none',
+                backgroundColor: isActive ? '#1d4ed8' : 'transparent',
+                color: isActive ? '#ffffff' : '#475569',
+                fontSize: '14px',
+                fontWeight: isActive ? 600 : 500,
+                cursor: 'pointer',
+                boxShadow: isActive ? '0 1px 3px rgba(15, 23, 42, 0.25)' : 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* BRANDING TAB */}
+      {settingsView === 'branding' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #2563eb',
+          }}>
         <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
           Logo
         </h3>
@@ -2799,15 +3086,243 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
             )}
           </div>
         </form>
-      </div>
+          </div>
+        </div>
+      )}
 
-      <div style={{
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        marginTop: '24px',
-      }}>
+      {/* AUDIO & TTS TAB */}
+      {settingsView === 'audio' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #f97316',
+          }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+          Ding Sound (Announcement Chime)
+        </h3>
+        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>
+          Upload a short audio file to play before each queue announcement on the public monitoring page.
+          Supported formats: MP3, WAV, OGG, M4A, AAC (max 2MB). Keep it brief (under 2 seconds) for best results.
+        </p>
+
+        {currentDing && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '500', marginBottom: '8px' }}>
+              Current Ding Sound:
+            </div>
+            <audio controls src={currentDing} style={{ width: '100%', maxWidth: '400px' }}>
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        )}
+
+        <form onSubmit={handleUploadDing}>
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+            }}>
+              Upload New Ding Sound
+            </label>
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleDingFileChange}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button type="submit" disabled={!dingFile || uploadingDing}>
+              {uploadingDing ? 'Uploading...' : 'Upload Ding Sound'}
+            </Button>
+            {currentDing && (
+              <Button variant="danger" onClick={handleDeleteDing}>
+                Delete Ding Sound
+              </Button>
+            )}
+          </div>
+        </form>
+          </div>
+
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #0ea5e9',
+          }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+          Announcement Message Template
+        </h3>
+        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px' }}>
+          Control what the voice will say when announcing a new client. You can use the following
+          placeholders, which will be replaced automatically:
+        </p>
+        <ul style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', paddingLeft: '20px' }}>
+          <li><code style={{ fontFamily: 'monospace' }}>{"{{window}}"}</code> — window label (e.g. Window 1)</li>
+          <li><code style={{ fontFamily: 'monospace' }}>{"{{queueNumber}}"}</code> — queue number counter (e.g. 6)</li>
+          <li><code style={{ fontFamily: 'monospace' }}>{"{{clientName}}"}</code> — client name (may be empty)</li>
+          <li><code style={{ fontFamily: 'monospace' }}>{"{{clientNamePart}}"}</code> — expands to <code>, or client name John Doe</code> when a name exists, or nothing otherwise</li>
+        </ul>
+
+        <form onSubmit={handleSaveAnnouncementTemplate}>
+          <textarea
+            value={announcementTemplate}
+            onChange={(e) => setAnnouncementTemplate(e.target.value)}
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              borderRadius: '8px',
+              border: '2px solid #e2e8f0',
+              fontSize: '14px',
+              fontFamily: 'monospace',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+            }}
+            placeholder='Window {{window}} will now serve queue number {{queueNumber}}{{clientNamePart}}.'
+          />
+
+          <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+            <Button type="submit" disabled={savingAnnouncementTemplate}>
+              {savingAnnouncementTemplate ? 'Saving Template...' : 'Save Template'}
+            </Button>
+          </div>
+        </form>
+          </div>
+
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #10b981',
+          }}>
+        <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+          Text-to-Speech Voices (ElevenLabs)
+        </h3>
+        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '16px' }}>
+          Configure up to three ElevenLabs voice IDs and choose which one is active for queue announcements.
+          Voice IDs can be copied from your ElevenLabs dashboard.
+        </p>
+
+        <form onSubmit={handleSaveVoices}>
+          {ttsVoices.map((voice, index) => (
+            <div
+              key={index}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1.4fr) auto',
+                gap: '12px',
+                marginBottom: '12px',
+                alignItems: 'center',
+              }}
+            >
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
+                  Voice {index + 1} Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={voice.name || ''}
+                  onChange={(e) => handleVoiceFieldChange(index, 'name', e.target.value)}
+                  placeholder="e.g. Front Desk Female"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '500' }}>
+                  Voice {index + 1} ID
+                </label>
+                <input
+                  type="text"
+                  value={voice.id || ''}
+                  onChange={(e) => handleVoiceFieldChange(index, 'id', e.target.value)}
+                  placeholder="ElevenLabs voice ID"
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0',
+                    fontSize: '14px',
+                    fontFamily: 'monospace',
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => handlePreviewVoice(voice.id)}
+                  disabled={!voice.id}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0',
+                    backgroundColor: voice.id ? '#eff6ff' : '#f8fafc',
+                    color: voice.id ? '#2563eb' : '#94a3b8',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    cursor: voice.id ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Preview Voice
+                </button>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                  <input
+                    type="radio"
+                    name="activeVoice"
+                    checked={!!voice.id && activeVoiceId === voice.id}
+                    disabled={!voice.id}
+                    onChange={() => {
+                      if (voice.id) {
+                        setActiveVoiceId(voice.id);
+                      }
+                    }}
+                  />
+                  Active
+                </label>
+              </div>
+            </div>
+          ))}
+
+          <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+            <Button type="submit" disabled={savingVoices}>
+              {savingVoices ? 'Saving Voices...' : 'Save Voices'}
+            </Button>
+          </div>
+        </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIDEOS TAB */}
+      {settingsView === 'videos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #6366f1',
+          }}>
         <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
           Video Folder Path
         </h3>
@@ -2869,7 +3384,9 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
             </Button>
           </div>
         </form>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

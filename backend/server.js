@@ -14,6 +14,7 @@ import categoryRoutes from './routes/categories.js';
 import videoRoutes from './routes/videos.js';
 import settingsRoutes from './routes/settings.js';
 import staffProfileRoutes from './routes/staffProfile.js';
+import ttsRoutes from './routes/tts.js';
 
 dotenv.config();
 
@@ -111,6 +112,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/windows', windowRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/videos', videoRoutes);
+app.use('/api/tts', ttsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

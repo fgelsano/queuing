@@ -3,6 +3,7 @@ import api from '../utils/api';
 import WindowCard from '../components/WindowCard';
 import Loading from '../components/Loading';
 import Logo from '../components/Logo';
+import { getQueueCounter } from '../utils/queueNumber';
 
 export default function PublicMonitoring() {
   const [windows, setWindows] = useState([]);
@@ -11,9 +12,15 @@ export default function PublicMonitoring() {
   const [loading, setLoading] = useState(true);
   const [videoError, setVideoError] = useState(false);
   const videoRef = useRef(null);
+  const previousWindowsRef = useRef([]);
+  const hasAnnouncedOnceRef = useRef(false);
+  const [dingSoundUrl, setDingSoundUrl] = useState(null);
+  const [announcementTemplate, setAnnouncementTemplate] = useState('');
 
   useEffect(() => {
     loadData();
+    loadDingSound();
+    loadAnnouncementTemplate();
     const interval = setInterval(loadData, 2000); // Poll every 2 seconds
     return () => clearInterval(interval);
   }, []);
@@ -66,12 +73,221 @@ export default function PublicMonitoring() {
   const loadData = async () => {
     try {
       const res = await api.get('/queue/public/windows');
-      setWindows(res.data.windows);
+      const newWindows = res.data.windows || [];
+
+      // Trigger text-to-speech announcements for any changes in "now serving"
+      try {
+        handleNowServingAnnouncements(previousWindowsRef.current, newWindows);
+      } catch (announceError) {
+        // Fail silently if speech synthesis is not available or any other error occurs
+        console.error('Failed to run TTS announcements:', announceError);
+      }
+
+      setWindows(newWindows);
+      previousWindowsRef.current = newWindows;
     } catch (error) {
       console.error('Failed to load windows:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDingSound = async () => {
+    try {
+      const res = await api.get('/admin/settings/ding-sound');
+      setDingSoundUrl(res.data.dingSoundUrl || null);
+    } catch (error) {
+      console.error('Failed to load ding sound URL:', error);
+      setDingSoundUrl(null);
+    }
+  };
+
+  const loadAnnouncementTemplate = async () => {
+    try {
+      const res = await api.get('/admin/settings/tts-announcement');
+      if (res.data.template) {
+        setAnnouncementTemplate(res.data.template);
+      }
+    } catch (error) {
+      console.error('Failed to load TTS announcement template:', error);
+    }
+  };
+
+  const playDing = (onDone) => {
+    // Safety: max wait before TTS, even if audio events fail
+    const MAX_WAIT_MS = 7000;
+
+    if (typeof window === 'undefined') {
+      if (onDone) setTimeout(onDone, MAX_WAIT_MS);
+      return;
+    }
+
+    let done = false;
+    const safeDone = () => {
+      if (done) return;
+      done = true;
+      if (onDone) onDone();
+    };
+
+    try {
+      // Prefer the uploaded MP3 ding if configured
+      if (dingSoundUrl) {
+        const audio = new Audio(dingSoundUrl);
+        audio.volume = 1.0;
+
+        audio.addEventListener('ended', safeDone);
+        audio.addEventListener('error', (err) => {
+          console.error('Failed to play custom ding sound:', err);
+          safeDone();
+        });
+
+        audio.play().catch((err) => {
+          console.error('Failed to start custom ding sound:', err);
+          safeDone();
+        });
+
+        // Hard safety timeout in case the ended event never fires
+        setTimeout(safeDone, MAX_WAIT_MS);
+        return;
+      }
+
+      // Fallback: synthesized chime
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+
+        const now = ctx.currentTime;
+        osc1.frequency.setValueAtTime(880, now); // A5
+        osc2.frequency.setValueAtTime(1175, now + 0.08); // ~D6
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.25, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+
+        osc1.start(now);
+        osc2.start(now + 0.08);
+        osc1.stop(now + 0.4);
+        osc2.stop(now + 0.4);
+
+        // Synth chime is ~0.4s; call done shortly after
+        setTimeout(safeDone, 500);
+        return;
+      }
+    } catch (err) {
+      console.error('Failed to play ding sound:', err);
+    }
+
+    // Last resort if nothing above worked
+    setTimeout(safeDone, MAX_WAIT_MS);
+  };
+
+  const handleNowServingAnnouncements = (oldWindows, newWindows) => {
+    if (typeof window === 'undefined') return;
+
+    // Skip announcements on the very first successful load to avoid a burst of audio
+    if (!hasAnnouncedOnceRef.current) {
+      hasAnnouncedOnceRef.current = true;
+      return;
+    }
+
+    const oldMap = new Map();
+    (oldWindows || []).forEach((w) => {
+      if (w && w.id && w.currentServing) {
+        oldMap.set(w.id, w.currentServing.queueNumber);
+      }
+    });
+
+    (newWindows || []).forEach((w) => {
+      if (!w || !w.id || !w.currentServing) return;
+
+      const newQueueNumber = w.currentServing.queueNumber;
+      const clientName = w.currentServing.clientName;
+      const oldQueueNumber = oldMap.get(w.id);
+
+      // Announce only when the queue number for this window actually changes
+      if (!newQueueNumber || newQueueNumber === oldQueueNumber) return;
+
+      const rawCounter = getQueueCounter
+        ? getQueueCounter(newQueueNumber)
+        : newQueueNumber;
+
+      // Convert "0006" -> "6" for more natural speech, but fall back gracefully
+      let spokenCounter = rawCounter;
+      const parsed = parseInt(rawCounter, 10);
+      if (!Number.isNaN(parsed)) {
+        spokenCounter = String(parsed);
+      }
+
+      const windowLabel = w.label || 'Window';
+
+      const clientNamePart = clientName ? `, or client name ${clientName}` : '';
+      const baseTemplate =
+        announcementTemplate ||
+        'Window {{window}} will now serve queue number {{queueNumber}}{{clientNamePart}}.';
+
+      // Support multiple placeholder variants for flexibility:
+      // {{window}} or {{window number}}
+      // {{queueNumber}} or {{queue number}}
+      // {{clientName}} or {{client name}}
+      const text = baseTemplate
+        .replace(/{{\s*(window|window number)\s*}}/gi, windowLabel)
+        .replace(/{{\s*(queueNumber|queue number)\s*}}/gi, spokenCounter)
+        .replace(/{{\s*clientNamePart\s*}}/gi, clientNamePart)
+        .replace(/{{\s*(clientName|client name)\s*}}/gi, clientName || '');
+      
+      // Start TTS fetch in parallel with ding so audio is ready at 5s
+      let ttsUrl = null;
+      let dingEnded = false;
+
+      const playTTSIfReady = () => {
+        if (!ttsUrl) return;
+        const audio = new Audio(ttsUrl);
+        audio.play().catch((err) => {
+          console.error('Failed to play TTS audio:', err);
+        }).finally(() => {
+          URL.revokeObjectURL(ttsUrl);
+        });
+      };
+
+      const onDingDone = () => {
+        dingEnded = true;
+        if (ttsUrl) playTTSIfReady();
+      };
+
+      // Fetch TTS immediately (runs in parallel with ding)
+      api.post('/tts', { text }, { responseType: 'arraybuffer' })
+        .then((response) => {
+          const audioData = response.data;
+          if (!audioData) return;
+          const blob = new Blob([audioData], { type: 'audio/mpeg' });
+          ttsUrl = URL.createObjectURL(blob);
+          if (dingEnded) playTTSIfReady();
+        })
+        .catch((error) => {
+          console.error('Cloud TTS request failed:', error);
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+          }
+        });
+
+      // Ding plays first; at 5s (when it ends) we play TTS if ready
+      playDing(onDingDone);
+    });
   };
 
   const loadVideos = async () => {
@@ -92,76 +308,84 @@ export default function PublicMonitoring() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
       background: '#f8fafc',
+      overflow: 'hidden',
     }}>
-      {/* Top Section - Windows */}
+      {/* Top half: header + cards (scrollable if needed) */}
       <div style={{
-        padding: '20px',
-        maxWidth: '1400px',
-        margin: '0 auto',
+        flex: '0 0 50vh',
+        minHeight: 0,
+        overflowY: 'auto',
       }}>
-        {/* Navbar with Logo and Title */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-          padding: '8px 0',
+          padding: '20px',
+          maxWidth: '1400px',
+          margin: '0 auto',
         }}>
-          <Logo size="large" />
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#1e293b',
-            margin: 0,
-          }}>
-            Queue Monitoring
-          </h1>
-        </div>
-
-        {loading ? (
-          <Loading />
-        ) : (
+          {/* Navbar with Logo and Title */}
           <div style={{
-            display: 'grid',
-            gap: '16px',
-            maxWidth: '900px',
-            margin: '0 auto 24px',
-          }}
-          className="grid-responsive">
-            {windows.length > 0 ? (
-              windows.map((window) => (
-                <WindowCard key={window.id} window={window} />
-              ))
-            ) : (
-              <div style={{
-                gridColumn: '1 / -1',
-                textAlign: 'center',
-                padding: '40px',
-                background: 'white',
-                borderRadius: '12px',
-                color: '#64748b',
-              }}>
-                No active windows at the moment
-              </div>
-            )}
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '16px',
+            padding: '8px 0',
+          }}>
+            <Logo size="large" />
+            <h1 style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              color: '#1e293b',
+              margin: 0,
+            }}>
+              Queue Monitoring
+            </h1>
           </div>
-        )}
+
+          {loading ? (
+            <Loading />
+          ) : (
+            <div style={{
+              display: 'grid',
+              gap: '16px',
+              marginBottom: '24px',
+            }}
+            className="grid-responsive">
+              {windows.length > 0 ? (
+                windows.map((window) => (
+                  <WindowCard key={window.id} window={window} />
+                ))
+              ) : (
+                <div style={{
+                  gridColumn: '1 / -1',
+                  textAlign: 'center',
+                  padding: '40px',
+                  background: 'white',
+                  borderRadius: '12px',
+                  color: '#64748b',
+                }}>
+                  No active windows at the moment
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Bottom Section - Video Player */}
+      {/* Bottom half: video player (stuck at bottom, exactly 50vh) */}
       <div style={{
+        flex: '0 0 50vh',
+        minHeight: 0,
         background: '#1e293b',
-        padding: 0,
-        width: '100%',
-        minHeight: '50vh',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         {videos.length > 0 && !videoError ? (
           <div style={{
-            width: '100%',
-            height: '100%',
-            minHeight: '50vh',
+            flex: 1,
+            minHeight: 0,
             position: 'relative',
             background: '#000',
           }}>
@@ -175,15 +399,13 @@ export default function PublicMonitoring() {
               style={{
                 width: '100%',
                 height: '100%',
-                minHeight: '50vh',
                 objectFit: 'contain',
               }}
             />
           </div>
         ) : (
           <div style={{
-            width: '100%',
-            minHeight: '50vh',
+            flex: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -208,7 +430,6 @@ export default function PublicMonitoring() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

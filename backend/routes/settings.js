@@ -11,16 +11,21 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '..', 'uploads', 'logos');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Ensure uploads directories exist
+const logoUploadsDir = path.join(__dirname, '..', 'uploads', 'logos');
+const soundUploadsDir = path.join(__dirname, '..', 'uploads', 'sounds');
+
+if (!fs.existsSync(logoUploadsDir)) {
+  fs.mkdirSync(logoUploadsDir, { recursive: true });
+}
+if (!fs.existsSync(soundUploadsDir)) {
+  fs.mkdirSync(soundUploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
+// Configure multer for logo file uploads
+const logoStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, logoUploadsDir);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -28,8 +33,8 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
-  storage: storage,
+const logoUpload = multer({
+  storage: logoStorage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -42,6 +47,36 @@ const upload = multer({
       return cb(null, true);
     } else {
       cb(new Error('Only image files are allowed!'));
+    }
+  },
+});
+
+// Configure multer for ding sound uploads
+const soundStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, soundUploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'ding-' + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const soundUpload = multer({
+  storage: soundStorage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit for ding sound
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow common audio formats, plus MP4 containers (often used for short audio clips)
+    const allowedTypes = /mp3|mpeg|wav|ogg|m4a|aac|mp4/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /audio|video\/mp4/.test(file.mimetype.toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only audio files are allowed! (mp3, wav, ogg, m4a, aac, mp4)'));
     }
   },
 });
@@ -65,7 +100,7 @@ router.get('/logo', async (req, res) => {
 });
 
 // Upload logo (admin only)
-router.post('/logo', authenticateToken, requireAdmin, upload.single('logo'), async (req, res) => {
+router.post('/logo', authenticateToken, requireAdmin, logoUpload.single('logo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
@@ -96,6 +131,84 @@ router.post('/logo', authenticateToken, requireAdmin, upload.single('logo'), asy
     res.json({ success: true, logoUrl });
   } catch (error) {
     console.error('Upload logo error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get ding sound URL (public - used by monitoring page)
+router.get('/ding-sound', async (req, res) => {
+  try {
+    const setting = await prisma.settings.findUnique({
+      where: { key: 'ding_sound_url' },
+    });
+
+    if (setting && setting.value) {
+      res.json({ dingSoundUrl: setting.value });
+    } else {
+      res.json({ dingSoundUrl: null });
+    }
+  } catch (error) {
+    console.error('Get ding sound error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upload ding sound (admin only)
+router.post('/ding-sound', authenticateToken, requireAdmin, soundUpload.single('sound'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    // Delete old ding sound if exists
+    const oldSetting = await prisma.settings.findUnique({
+      where: { key: 'ding_sound_url' },
+    });
+
+    if (oldSetting && oldSetting.value) {
+      const oldSoundPath = path.join(__dirname, '..', oldSetting.value.replace('/uploads/', 'uploads/'));
+      if (fs.existsSync(oldSoundPath)) {
+        fs.unlinkSync(oldSoundPath);
+      }
+    }
+
+    const dingSoundUrl = `/uploads/sounds/${req.file.filename}`;
+
+    await prisma.settings.upsert({
+      where: { key: 'ding_sound_url' },
+      update: { value: dingSoundUrl },
+      create: { key: 'ding_sound_url', value: dingSoundUrl },
+    });
+
+    console.log('Ding sound uploaded successfully:', dingSoundUrl);
+    res.json({ success: true, dingSoundUrl });
+  } catch (error) {
+    console.error('Upload ding sound error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete ding sound (admin only)
+router.delete('/ding-sound', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const setting = await prisma.settings.findUnique({
+      where: { key: 'ding_sound_url' },
+    });
+
+    if (setting && setting.value) {
+      const soundPath = path.join(__dirname, '..', setting.value.replace('/uploads/', 'uploads/'));
+      if (fs.existsSync(soundPath)) {
+        fs.unlinkSync(soundPath);
+      }
+
+      await prisma.settings.delete({
+        where: { key: 'ding_sound_url' },
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete ding sound error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -188,6 +301,139 @@ router.post('/video-folder', authenticateToken, requireAdmin, async (req, res) =
     res.json({ success: true, videoFolderPath: resolvedPath });
   } catch (error) {
     console.error('Set video folder error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get TTS announcement template (public - used by monitoring page)
+router.get('/tts-announcement', async (req, res) => {
+  try {
+    const setting = await prisma.settings.findUnique({
+      where: { key: 'tts_announcement_template' },
+    });
+
+    const defaultTemplate =
+      'Window {{window}} will now serve queue number {{queueNumber}}{{clientNamePart}}.';
+
+    res.json({
+      template: setting?.value || defaultTemplate,
+    });
+  } catch (error) {
+    console.error('Get TTS announcement template error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Set TTS announcement template (admin only)
+router.post('/tts-announcement', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { template } = req.body || {};
+
+    if (!template || typeof template !== 'string' || !template.trim()) {
+      return res.status(400).json({ error: 'Template is required' });
+    }
+
+    const trimmed = template.trim();
+
+    await prisma.settings.upsert({
+      where: { key: 'tts_announcement_template' },
+      update: { value: trimmed },
+      create: { key: 'tts_announcement_template', value: trimmed },
+    });
+
+    console.log('TTS announcement template updated successfully');
+
+    res.json({
+      success: true,
+      template: trimmed,
+    });
+  } catch (error) {
+    console.error('Set TTS announcement template error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get TTS voices configuration (admin only)
+router.get('/tts-voices', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const voicesSetting = await prisma.settings.findUnique({
+      where: { key: 'tts_voices_json' },
+    });
+    const activeVoiceSetting = await prisma.settings.findUnique({
+      where: { key: 'tts_active_voice_id' },
+    });
+
+    let voices = [];
+    if (voicesSetting && voicesSetting.value) {
+      try {
+        voices = JSON.parse(voicesSetting.value);
+      } catch {
+        voices = [];
+      }
+    }
+
+    const activeVoiceId = activeVoiceSetting?.value || null;
+
+    res.json({
+      voices,
+      activeVoiceId,
+    });
+  } catch (error) {
+    console.error('Get TTS voices error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Set TTS voices configuration (admin only)
+router.post('/tts-voices', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { voices, activeVoiceId } = req.body || {};
+
+    if (!Array.isArray(voices)) {
+      return res.status(400).json({ error: 'Voices must be an array' });
+    }
+
+    // Normalize and limit to 3 voices
+    const normalizedVoices = voices
+      .map((v) => ({
+        id: typeof v.id === 'string' ? v.id.trim() : '',
+        name: typeof v.name === 'string' ? v.name.trim() : '',
+      }))
+      .filter((v) => v.id)
+      .slice(0, 3);
+
+    if (normalizedVoices.length === 0) {
+      return res.status(400).json({ error: 'At least one voice ID is required' });
+    }
+
+    // Validate activeVoiceId
+    const activeId = typeof activeVoiceId === 'string' ? activeVoiceId.trim() : '';
+    const resolvedActiveId =
+      activeId && normalizedVoices.some((v) => v.id === activeId)
+        ? activeId
+        : normalizedVoices[0].id;
+
+    await prisma.settings.upsert({
+      where: { key: 'tts_voices_json' },
+      update: { value: JSON.stringify(normalizedVoices) },
+      create: { key: 'tts_voices_json', value: JSON.stringify(normalizedVoices) },
+    });
+
+    await prisma.settings.upsert({
+      where: { key: 'tts_active_voice_id' },
+      update: { value: resolvedActiveId },
+      create: { key: 'tts_active_voice_id', value: resolvedActiveId },
+    });
+
+    console.log('TTS voices updated successfully');
+
+    res.json({
+      success: true,
+      voices: normalizedVoices,
+      activeVoiceId: resolvedActiveId,
+    });
+  } catch (error) {
+    console.error('Set TTS voices error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

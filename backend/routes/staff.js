@@ -180,6 +180,16 @@ router.post('/assign-window', async (req, res) => {
     const staffId = req.user.id;
     const { windowId } = req.body;
 
+    // Validate staff exists to avoid foreign key issues
+    const staff = await prisma.staff.findUnique({
+      where: { id: staffId },
+    });
+
+    if (!staff) {
+      console.warn(`Assign window error: staff ${staffId} not found`);
+      return res.status(401).json({ error: 'Staff account no longer exists' });
+    }
+
     // Deactivate current assignments
     await prisma.windowAssignment.updateMany({
       where: {
@@ -194,24 +204,47 @@ router.post('/assign-window', async (req, res) => {
       return res.json({ success: true, assignment: null });
     }
 
+    // Validate that the window exists to avoid foreign key errors
+    const window = await prisma.window.findUnique({
+      where: { id: windowId },
+    });
+
+    if (!window) {
+      console.warn(`Assign window error: window ${windowId} not found`);
+      return res.status(400).json({ error: 'Selected window does not exist. Please refresh and try again.' });
+    }
+
     // Create new assignment
-    const assignment = await prisma.windowAssignment.create({
-      data: {
-        staffId,
-        windowId,
-        isActive: true,
-      },
-      include: {
-        window: true,
-        staff: {
-          select: {
-            id: true,
-            name: true,
-            profilePicture: true,
+    let assignment;
+    try {
+      assignment = await prisma.windowAssignment.create({
+        data: {
+          staffId,
+          windowId,
+          isActive: true,
+        },
+        include: {
+          window: true,
+          staff: {
+            select: {
+              id: true,
+              name: true,
+              profilePicture: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      // Handle foreign key constraint issues more gracefully
+      if (error.code === 'P2003') {
+        console.error('Assign window foreign key error:', error);
+        return res.status(400).json({
+          error:
+            'Unable to assign window due to invalid staff or window reference. Please refresh the page and try again.',
+        });
+      }
+      throw error;
+    }
 
     res.json({ assignment });
   } catch (error) {
