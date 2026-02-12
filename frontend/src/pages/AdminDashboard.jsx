@@ -9,7 +9,7 @@ import {
   PlayCircle, Hourglass, CheckCircle, Monitor, UserCircle, 
   Building2, Users2
 } from 'lucide-react';
-import api from '../utils/api';
+import api, { getStoredUser } from '../utils/api';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const user = getStoredUser();
     if (!token || user?.role !== 'ADMIN') {
       navigate('/admin/login');
       return;
@@ -2709,7 +2709,9 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
   const [savingVideoFolder, setSavingVideoFolder] = useState(false);
 
   // Local tab state for settings subsections
-  const [settingsView, setSettingsView] = useState('branding'); // 'branding' | 'audio' | 'videos'
+  const [settingsView, setSettingsView] = useState('branding'); // 'branding' | 'audio' | 'videos' | 'data'
+  const [resetQueueConfirm, setResetQueueConfirm] = useState({ open: false });
+  const [resettingQueue, setResettingQueue] = useState(false);
 
   useEffect(() => {
     loadCurrentLogo();
@@ -3038,6 +3040,7 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
     <div>
       <ConfirmDialog {...confirmDialog} />
       <ConfirmDialog {...dingConfirmDialog} />
+      <ConfirmDialog {...resetQueueConfirm} />
       <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
         Settings
       </h2>
@@ -3057,6 +3060,7 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
           { id: 'branding', label: 'Branding' },
           { id: 'audio', label: 'Audio & TTS' },
           { id: 'videos', label: 'Videos' },
+          { id: 'data', label: 'Data' },
         ].map((tab) => {
           const isActive = settingsView === tab.id;
           return (
@@ -3473,6 +3477,52 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
             </Button>
           </div>
         </form>
+          </div>
+        </div>
+      )}
+
+      {/* DATA TAB - Reset queue stats */}
+      {settingsView === 'data' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            borderTop: '3px solid #dc2626',
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
+              Reset queue stats
+            </h3>
+            <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '24px' }}>
+              Permanently delete all queue entries, serving logs, and daily queue counters. Staff, windows, and categories are not affected. This cannot be undone.
+            </p>
+            <Button
+              variant="danger"
+              disabled={resettingQueue}
+              onClick={() => {
+                setResetQueueConfirm({
+                  open: true,
+                  title: 'Reset all queue stats?',
+                  message: 'This will delete all queue entries, serving logs, and daily counters. Staff, windows, and categories will be kept. This action cannot be undone.',
+                  onConfirm: async () => {
+                    setResetQueueConfirm({ open: false });
+                    setResettingQueue(true);
+                    try {
+                      await api.post('/admin/reset-queue-stats');
+                      toastSuccess('Queue stats reset successfully.');
+                    } catch (error) {
+                      toastError(error.response?.data?.error || 'Failed to reset queue stats');
+                    } finally {
+                      setResettingQueue(false);
+                    }
+                  },
+                  onCancel: () => setResetQueueConfirm({ open: false }),
+                });
+              }}
+            >
+              {resettingQueue ? 'Resetting...' : 'Reset queue stats'}
+            </Button>
           </div>
         </div>
       )}

@@ -46,4 +46,15 @@ api.interceptors.response.use(
   },
 );
 
+/** Safe parse of stored user — avoids JSON.parse("undefined") errors */
+export function getStoredUser() {
+  const raw = localStorage.getItem("user");
+  if (raw == null || raw === "" || raw === "undefined") return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export default api;

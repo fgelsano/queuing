@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { getStoredUser } from '../utils/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Logo from '../components/Logo';
@@ -17,7 +17,7 @@ export default function AdminLogin() {
   useEffect(() => {
     // Check if already logged in
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const user = getStoredUser();
     if (token && user?.role === 'ADMIN') {
       navigate('/admin/dashboard');
     }

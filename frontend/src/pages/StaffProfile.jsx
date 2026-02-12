@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { getStoredUser } from '../utils/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import Loading from '../components/Loading';
@@ -24,7 +24,7 @@ export default function StaffProfile() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const user = getStoredUser();
     if (!token || user?.role !== 'STAFF') {
       navigate('/staff/login');
       return;

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Play, CheckCircle, XCircle, SkipForward } from 'lucide-react';
-import api from '../utils/api';
+import api, { getStoredUser } from '../utils/api';
 import Button from '../components/Button';
 import ClientTypeBadge from '../components/ClientTypeBadge';
 import Loading from '../components/Loading';
@@ -23,10 +23,11 @@ export default function StaffDashboard() {
   const [windows, setWindows] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [dateRange, setDateRange] = useState('today');
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    const user = getStoredUser();
     if (!token || user?.role !== 'STAFF') {
       navigate('/staff/login');
       return;
@@ -43,6 +44,11 @@ export default function StaffDashboard() {
       loadAnalytics();
     }
   }, [dateRange]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadDashboard = async () => {
     try {
@@ -184,6 +190,22 @@ export default function StaffDashboard() {
   const clientTypeData = analytics?.byClientType ?
     Object.entries(analytics.byClientType).map(([name, value]) => ({ name, value })) : [];
 
+  const formatDateTime = (date) => {
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const weekday = weekdays[date.getDay()];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${weekday}, ${month} ${day}, ${year} at ${hours}:${minutes}:${seconds} ${ampm}`;
+  };
+
   return (
     <>
       <style>{`
@@ -287,6 +309,17 @@ export default function StaffDashboard() {
           margin: '0 auto',
           padding: '24px',
         }}>
+          {/* Date and Time Display */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#1e293b',
+            }}>
+              {formatDateTime(currentDateTime)}
+            </div>
+          </div>
+
           {/* Window Assignment */}
           {!window && (
             <div style={{

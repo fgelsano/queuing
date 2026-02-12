@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import api, { getStoredUser } from '../utils/api';
 
 export default function AdminProfileDropdown({ onLogout }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +26,7 @@ export default function AdminProfileDropdown({ onLogout }) {
 
   const loadProfile = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      const user = getStoredUser();
       if (user) {
         setAdmin({ name: user.name || 'Admin', username: user.username });
       }
