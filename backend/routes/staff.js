@@ -85,10 +85,17 @@ router.get('/dashboard', async (req, res) => {
     });
 
     if (!windowAssignment) {
+      const totalSkippedNoWindow = await prisma.queueEntry.count({
+        where: {
+          status: 'SKIPPED',
+          skippedByStaffId: req.user.id,
+          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+        },
+      });
       return res.json({
         window: null,
         queue: [],
-        stats: {},
+        stats: { totalServed: 0, totalSkipped: totalSkippedNoWindow },
       });
     }
 
@@ -171,11 +178,20 @@ router.get('/dashboard', async (req, res) => {
       },
     });
 
+    const totalSkipped = await prisma.queueEntry.count({
+      where: {
+        status: 'SKIPPED',
+        skippedByStaffId: staffId,
+        createdAt: { gte: today },
+      },
+    });
+
     res.json({
       window: windowAssignment.window,
       queue: queueEntries,
       stats: {
         totalServed,
+        totalSkipped,
         byType: stats.reduce((acc, s) => {
           acc[s.clientType] = (acc[s.clientType] || 0) + s._count;
           return acc;
@@ -267,7 +283,7 @@ router.post('/assign-window', async (req, res) => {
   }
 });
 
-// Get staff profile
+// Get staff profile (includes current window assignment for profile page)
 router.get('/profile', async (req, res) => {
   try {
     const staffId = req.user.id;
@@ -282,7 +298,14 @@ router.get('/profile', async (req, res) => {
       },
     });
 
-    res.json({ staff });
+    const windowAssignment = await prisma.windowAssignment.findFirst({
+      where: { staffId, isActive: true },
+      orderBy: { assignedAt: 'desc' },
+      include: { window: true },
+    });
+    const currentWindow = windowAssignment?.window || null;
+
+    res.json({ staff, currentWindow });
   } catch (error) {
     console.error('Get staff profile error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -465,15 +488,29 @@ router.post('/complete/:queueEntryId', async (req, res) => {
   }
 });
 
-// Mark as skipped
+// Mark as skipped (records staffId for stats)
 router.post('/skip/:queueEntryId', async (req, res) => {
   try {
+    const staffId = req.user.id;
     const { queueEntryId } = req.params;
+
+    const entry = await prisma.queueEntry.findUnique({
+      where: { id: queueEntryId },
+    });
+
+    if (!entry) {
+      return res.status(404).json({ error: 'Queue entry not found' });
+    }
+
+    if (entry.status === 'SKIPPED') {
+      return res.status(400).json({ error: 'Entry already skipped' });
+    }
 
     await prisma.queueEntry.update({
       where: { id: queueEntryId },
       data: {
         status: 'SKIPPED',
+        skippedByStaffId: staffId,
       },
     });
 

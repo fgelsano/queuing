@@ -100,6 +100,7 @@ router.post('/admin/login', [
       user: {
         id: admin.id,
         username: admin.username,
+        name: admin.name ?? null,
         role: 'ADMIN',
       },
     });

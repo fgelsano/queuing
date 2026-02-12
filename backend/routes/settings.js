@@ -438,4 +438,17 @@ router.post('/tts-voices', authenticateToken, requireAdmin, async (req, res) => 
   }
 });
 
+// Reset all queue stats (keeps staff, windows, categories) - admin only
+router.post('/reset-queue-stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await prisma.servingLog.deleteMany({});
+    await prisma.queueEntry.deleteMany({});
+    await prisma.dailyCounter.deleteMany({});
+    res.json({ success: true, message: 'Queue stats reset successfully' });
+  } catch (error) {
+    console.error('Reset queue stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

@@ -18,6 +18,7 @@ datasource db {
 model Admin {
   id        String   @id @default(cuid())
   username  String   @unique
+  name      String?  // Display name (editable on profile)
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -92,6 +93,7 @@ model QueueEntry {
   concernCategoryIds   String?  // JSON array of all selected category IDs
   concernSubCategoryIds String? // JSON array of all selected subcategory IDs
   windowId             String?
+  skippedByStaffId     String?  // Staff who skipped (for stats)
   joinedAt      DateTime @default(now())
   servedAt      DateTime?
   createdAt     DateTime @default(now())

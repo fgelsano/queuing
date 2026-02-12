@@ -44,6 +44,75 @@ async function autoResolveOldServingEntries() {
 router.use(authenticateToken);
 router.use(requireAdmin);
 
+// Admin profile (logged-in admin only)
+router.get('/profile', async (req, res) => {
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, username: true, name: true, createdAt: true },
+    });
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+    res.json({ admin });
+  } catch (error) {
+    console.error('Get admin profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.put('/profile', [
+  body('name').optional(),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { name } = req.body;
+    if (!req.body.hasOwnProperty('name')) {
+      return res.status(400).json({ error: 'No updates provided' });
+    }
+    const value = typeof name === 'string' ? (name.trim() || null) : null;
+    const admin = await prisma.admin.update({
+      where: { id: req.user.id },
+      data: { name: value },
+      select: { id: true, username: true, name: true, createdAt: true },
+    });
+    res.json({ admin });
+  } catch (error) {
+    console.error('Update admin profile error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/profile/change-password', [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { currentPassword, newPassword } = req.body;
+    const admin = await prisma.admin.findUnique({
+      where: { id: req.user.id },
+      select: { password: true },
+    });
+    if (!admin) return res.status(404).json({ error: 'Admin not found' });
+    const valid = await bcrypt.compare(currentPassword, admin.password);
+    if (!valid) return res.status(401).json({ error: 'Current password is incorrect' });
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.admin.update({
+      where: { id: req.user.id },
+      data: { password: hashed },
+    });
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Admin change password error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Staff Management
 router.get('/staff', async (req, res) => {
   try {
