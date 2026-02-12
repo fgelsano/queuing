@@ -84,7 +84,7 @@ export default function ToastContainer() {
       gap: '12px',
       pointerEvents: 'none',
     }}>
-      {toastList.map((toast) => {
+      {(toastList || []).map((toast) => {
         const toastConfig = toastTypes[toast.type] || toastTypes.info;
         const Icon = toastConfig.icon;
         

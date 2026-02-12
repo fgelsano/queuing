@@ -62,8 +62,10 @@ export default function AdminProfileDropdown({ onLogout }) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          width: '40px',
-          height: '40px',
+          width: '44px',
+          height: '44px',
+          minWidth: '44px',
+          minHeight: '44px',
           borderRadius: '50%',
           border: '2px solid #e2e8f0',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -118,7 +120,8 @@ export default function AdminProfileDropdown({ onLogout }) {
             }}
             style={{
               width: '100%',
-              padding: '12px 16px',
+              padding: '14px 16px',
+              minHeight: '44px',
               border: 'none',
               background: 'transparent',
               textAlign: 'left',
@@ -126,6 +129,8 @@ export default function AdminProfileDropdown({ onLogout }) {
               color: '#ef4444',
               cursor: 'pointer',
               transition: 'background 0.2s',
+              display: 'flex',
+              alignItems: 'center',
             }}
             onMouseOver={(e) => {
               e.target.style.background = '#fee2e2';

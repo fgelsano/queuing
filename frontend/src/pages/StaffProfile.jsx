@@ -150,9 +150,39 @@ export default function StaffProfile() {
   const displayPicture = preview || (staff?.profilePicture ? staff.profilePicture : null);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+    <div className="staff-profile-root" style={{ minHeight: '100vh', background: '#f8fafc' }}>
+      <style>{`
+        .staff-profile-root {
+          padding-left: env(safe-area-inset-left);
+          padding-right: env(safe-area-inset-right);
+        }
+        @media (max-width: 768px) {
+          .staff-profile-header {
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
+          }
+          .staff-profile-content {
+            margin: 24px auto !important;
+            padding: 0 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
+          }
+          .staff-profile-card {
+            padding: 24px !important;
+          }
+          .staff-profile-buttons {
+            flex-direction: column !important;
+          }
+          .staff-profile-buttons button {
+            width: 100%;
+          }
+        }
+      `}</style>
       {/* Header */}
-      <div style={{
+      <div className="staff-profile-header" style={{
         background: 'white',
         borderBottom: '1px solid #e2e8f0',
         padding: '16px 24px',
@@ -166,12 +196,12 @@ export default function StaffProfile() {
         </Button>
       </div>
 
-      <div style={{
+      <div className="staff-profile-content" style={{
         maxWidth: '600px',
         margin: '40px auto',
         padding: '0 24px',
       }}>
-        <div style={{
+        <div className="staff-profile-card" style={{
           background: 'white',
           borderRadius: '12px',
           padding: '32px',
@@ -256,7 +286,7 @@ export default function StaffProfile() {
               style={{ background: '#f1f5f9' }}
             />
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+            <div className="staff-profile-buttons" style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <Button type="submit" disabled={saving} fullWidth>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>

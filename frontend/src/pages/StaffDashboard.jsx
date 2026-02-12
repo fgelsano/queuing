@@ -112,7 +112,12 @@ export default function StaffDashboard() {
       loadDashboard();
     } catch (error) {
       console.error('Failed to start serving:', error);
-      alert(error.response?.data?.error || 'Failed to start serving');
+      if (error.response?.status === 409) {
+        toastError(error.response?.data?.error || 'Client was already claimed. Refreshing...');
+        loadDashboard();
+      } else {
+        toastError(error.response?.data?.error || 'Failed to start serving');
+      }
     }
   };
 
@@ -182,10 +187,24 @@ export default function StaffDashboard() {
   return (
     <>
       <style>{`
+        .staff-dashboard-root {
+          padding-left: env(safe-area-inset-left);
+          padding-right: env(safe-area-inset-right);
+        }
+        .staff-dashboard-content {
+          padding-left: max(24px, env(safe-area-inset-left));
+          padding-right: max(24px, env(safe-area-inset-right));
+        }
+        .queue-item-buttons button {
+          min-height: 44px;
+        }
         @media (max-width: 768px) {
           .staff-dashboard-header {
             flex-wrap: wrap;
             gap: 12px;
+            padding: 12px 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
           }
           .staff-dashboard-header > div:first-child {
             width: 100%;
@@ -202,6 +221,8 @@ export default function StaffDashboard() {
           }
           .staff-dashboard-content {
             padding: 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
           }
           .queue-item-grid {
             grid-template-columns: 1fr !important;
@@ -210,9 +231,22 @@ export default function StaffDashboard() {
           .queue-item-buttons {
             flex-direction: row !important;
             width: 100% !important;
+            flex-wrap: wrap;
           }
           .queue-item-buttons button {
             flex: 1;
+            min-width: 120px;
+          }
+          .staff-window-assign-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .queue-item-buttons {
+            flex-direction: column !important;
+          }
+          .queue-item-buttons button {
+            min-width: 100%;
           }
         }
         @media (max-width: 1024px) and (min-width: 769px) {
@@ -221,7 +255,7 @@ export default function StaffDashboard() {
           }
         }
       `}</style>
-      <div style={{
+      <div className="staff-dashboard-root" style={{
         minHeight: '100vh',
         background: '#f8fafc',
       }}>
@@ -265,7 +299,7 @@ export default function StaffDashboard() {
               <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
                 Assign Window
               </h2>
-              <div style={{
+              <div className="staff-window-assign-grid" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
                 gap: '12px',
@@ -508,8 +542,8 @@ function QueueItem({ entry, onServe, onComplete, onSkip }) {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
           <ClientTypeBadge clientType={entry.clientType} />
           <span style={{ fontSize: '12px', color: '#64748b' }}>
-            {entry.category.name}
-            {entry.subCategory && ` - ${entry.subCategory.name}`}
+            {(entry.concernCategories?.length ? entry.concernCategories : entry.category ? [entry.category] : []).map((c) => c?.name).filter(Boolean).join(', ')}
+            {((entry.concernSubCategories?.length ? entry.concernSubCategories : entry.subCategory ? [entry.subCategory] : []).map((s) => s?.name).filter(Boolean).length > 0) && ` - ${(entry.concernSubCategories?.length ? entry.concernSubCategories : [entry.subCategory]).map((s) => s?.name).filter(Boolean).join(', ')}`}
           </span>
         </div>
         <div style={{ fontSize: '12px', color: '#94a3b8' }}>

@@ -24,8 +24,8 @@ export default function Button({
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    boxShadow: variant === 'primary' || variant === 'success' || variant === 'danger' 
-      ? '0 2px 4px rgba(0,0,0,0.1)' 
+    boxShadow: (variant === 'primary' || variant === 'success' || variant === 'danger' || variant === 'gradient')
+      ? '0 2px 4px rgba(0,0,0,0.1)'
       : 'none',
     ...style,
   };
@@ -34,6 +34,11 @@ export default function Button({
     primary: {
       background: disabled ? '#cbd5e1' : '#2563eb',
       color: 'white',
+    },
+    gradient: {
+      background: disabled ? '#cbd5e1' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      boxShadow: disabled ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.4)',
     },
     secondary: {
       background: disabled ? '#cbd5e1' : '#64748b',
@@ -83,15 +88,20 @@ export default function Button({
           } else if (variant === 'success') {
             e.target.style.background = '#059669';
             e.target.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+          } else if (variant === 'gradient') {
+            e.target.style.background = 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)';
+            e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
           }
         }
       }}
       onMouseOut={(e) => {
         if (!disabled) {
           e.target.style.background = variantStyle.background;
-          e.target.style.boxShadow = variant === 'primary' || variant === 'success' || variant === 'danger'
-            ? '0 2px 4px rgba(0,0,0,0.1)'
-            : 'none';
+          e.target.style.boxShadow = variant === 'gradient'
+            ? '0 4px 12px rgba(102, 126, 234, 0.4)'
+            : (variant === 'primary' || variant === 'success' || variant === 'danger')
+              ? '0 2px 4px rgba(0,0,0,0.1)'
+              : 'none';
         }
       }}
       {...props}

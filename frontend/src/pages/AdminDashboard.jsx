@@ -22,6 +22,17 @@ import InputDialog from '../components/InputDialog';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
+// Show API error in toast: use single .error string, or first validation .errors[].msg, or fallback
+function getApiErrorMessage(error, fallback) {
+  const d = error?.response?.data;
+  if (d?.error && typeof d.error === 'string') return d.error;
+  if (Array.isArray(d?.errors) && d.errors.length > 0) {
+    const first = d.errors[0];
+    return first?.msg || first?.message || fallback;
+  }
+  return fallback;
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -170,16 +181,26 @@ export default function AdminDashboard() {
   return (
     <>
       <style>{`
+        .admin-dashboard-root {
+          padding-left: env(safe-area-inset-left);
+          padding-right: env(safe-area-inset-right);
+        }
+        .admin-dashboard-content {
+          padding-left: max(24px, env(safe-area-inset-left));
+          padding-right: max(24px, env(safe-area-inset-right));
+        }
         @media (max-width: 768px) {
           .admin-dashboard-header {
             flex-wrap: wrap;
             gap: 12px;
+            padding: 12px 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
           }
           .admin-dashboard-header > div:first-child {
-            width: 100%;
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 8px !important;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
           }
           .admin-dashboard-header h1 {
             font-size: 20px !important;
@@ -188,17 +209,22 @@ export default function AdminDashboard() {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             padding: 0 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
           }
           .admin-dashboard-tabs button {
             white-space: nowrap;
             font-size: 13px;
             padding: 10px 16px !important;
+            min-height: 44px;
+            flex-shrink: 0;
           }
           .admin-dashboard-tabs button span {
             display: none;
           }
           .admin-dashboard-content {
             padding: 16px !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
           }
           .admin-stats-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -223,12 +249,38 @@ export default function AdminDashboard() {
           .settings-grid {
             grid-template-columns: minmax(0, 1fr) !important;
           }
+          .admin-modal-overlay {
+            padding: 16px;
+            align-items: flex-start;
+            overflow-y: auto;
+          }
+          .admin-modal-box {
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            width: 100%;
+            margin: auto;
+          }
+          .admin-settings-buttons {
+            flex-wrap: wrap;
+          }
+          .admin-settings-buttons button {
+            min-width: 140px;
+          }
+          .admin-reports-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -16px;
+            padding: 0 16px;
+          }
         }
         @media (max-width: 480px) {
           .admin-stats-grid,
           .admin-stats-grid-4,
           .admin-cards-grid {
             grid-template-columns: 1fr !important;
+          }
+          .admin-dashboard-tabs button {
+            padding: 12px 14px !important;
           }
         }
         @media (max-width: 1024px) and (min-width: 769px) {
@@ -244,7 +296,7 @@ export default function AdminDashboard() {
           }
         }
       `}</style>
-      <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+      <div className="admin-dashboard-root" style={{ minHeight: '100vh', background: '#f8fafc' }}>
         <InputDialog {...inputDialog} />
         {/* Header */}
         <div className="admin-dashboard-header" style={{
@@ -538,6 +590,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
   const [editing, setEditing] = useState(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false });
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -563,7 +616,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
       toastSuccess('Staff created successfully!');
       onRefresh();
     } catch (error) {
-      toastError(error.response?.data?.error || 'Failed to create staff');
+      toastError(getApiErrorMessage(error, 'Failed to create staff'));
     }
   };
 
@@ -576,7 +629,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
       toastSuccess('Staff updated successfully!');
       onRefresh();
     } catch (error) {
-      toastError(error.response?.data?.error || 'Failed to update staff');
+      toastError(getApiErrorMessage(error, 'Failed to update staff'));
     }
   };
 
@@ -586,7 +639,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
       toastSuccess(`Staff ${!isActive ? 'activated' : 'deactivated'} successfully!`);
       onRefresh();
     } catch (error) {
-      toastError(error.response?.data?.error || 'Failed to update staff');
+      toastError(getApiErrorMessage(error, 'Failed to update staff'));
     }
   };
 
@@ -619,6 +672,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
 
   return (
     <div>
+      <ConfirmDialog {...confirmDialog} />
       <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
         <h2 style={{ fontSize: '20px', fontWeight: '600' }}>Staff Management</h2>
         <Button onClick={() => {
@@ -644,8 +698,8 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
         }} onClick={() => {
           setForm({ open: false, data: {} });
           setEditing(null);
-        }}>
-          <div style={{
+        }} className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{
             background: 'white',
             borderRadius: '12px',
             padding: '24px',
@@ -1050,18 +1104,49 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog 
                   Reset Password
                 </button>
               </div>
-              <Button
-                variant={s.isActive ? 'danger' : 'success'}
-                icon={Power}
-                onClick={() => handleToggleActive(s.id, s.isActive)}
-                style={{ 
-                  fontSize: '12px', 
-                  padding: '6px 12px',
-                  width: '100%',
-                }}
-              >
-                {s.isActive ? 'Deactivate' : 'Activate'}
-              </Button>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                <Button
+                  variant={s.isActive ? 'danger' : 'success'}
+                  icon={Power}
+                  onClick={() => handleToggleActive(s.id, s.isActive)}
+                  style={{ 
+                    fontSize: '12px', 
+                    padding: '6px 12px',
+                    flex: 1,
+                  }}
+                >
+                  {s.isActive ? 'Deactivate' : 'Activate'}
+                </Button>
+                <Button
+                  variant="danger"
+                  icon={Trash2}
+                  onClick={() => {
+                    setConfirmDialog({
+                      open: true,
+                      title: 'Remove Staff',
+                      message: `Are you sure you want to remove ${s.name || s.username}? This cannot be undone and is only allowed if the staff has no serving history.`,
+                      onConfirm: async () => {
+                        setConfirmDialog({ open: false });
+                        try {
+                          await api.delete(`/admin/staff/${s.id}`);
+                          toastSuccess('Staff removed successfully!');
+                          onRefresh();
+                        } catch (error) {
+                          toastError(getApiErrorMessage(error, 'Failed to remove staff'));
+                        }
+                      },
+                      onCancel: () => setConfirmDialog({ open: false }),
+                    });
+                  }}
+                  style={{
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    flex: 1,
+                  }}
+                >
+                  Remove
+                </Button>
+              </div>
             </div>
           </div>
           );
@@ -1083,7 +1168,7 @@ function WindowsTab({ windows, onRefresh, form, setForm }) {
       toastSuccess('Window created successfully!');
       onRefresh();
     } catch (error) {
-      toastError(error.response?.data?.error || 'Failed to create window');
+      toastError(getApiErrorMessage(error, 'Failed to create window'));
     }
   };
 
@@ -1096,7 +1181,7 @@ function WindowsTab({ windows, onRefresh, form, setForm }) {
       toastSuccess('Window updated successfully!');
       onRefresh();
     } catch (error) {
-      toastError(error.response?.data?.error || 'Failed to update window');
+      toastError(getApiErrorMessage(error, 'Failed to update window'));
     }
   };
 
@@ -1112,7 +1197,7 @@ function WindowsTab({ windows, onRefresh, form, setForm }) {
           toastSuccess('Window deleted successfully!');
           onRefresh();
         } catch (error) {
-          toastError(error.response?.data?.error || 'Failed to delete window');
+          toastError(getApiErrorMessage(error, 'Failed to delete window'));
         }
       },
       onCancel: () => setConfirmDialog({ open: false }),
@@ -1150,8 +1235,8 @@ function WindowsTab({ windows, onRefresh, form, setForm }) {
         }} onClick={() => {
           setForm({ open: false, data: {} });
           setEditing(null);
-        }}>
-          <div style={{
+        }} className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{
             background: 'white',
             borderRadius: '12px',
             padding: '24px',
@@ -1476,13 +1561,15 @@ function CategoriesTab({ categories, onRefresh, categoryForm, setCategoryForm, s
         }} onClick={() => {
           setCategoryForm({ open: false, data: {} });
           setEditingCategory(null);
-        }}>
-          <div style={{
+        }} className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{
             background: 'white',
             borderRadius: '12px',
             padding: '24px',
             maxWidth: '500px',
             width: '90%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
           }} onClick={(e) => e.stopPropagation()}>
             <div style={{
@@ -1559,13 +1646,15 @@ function CategoriesTab({ categories, onRefresh, categoryForm, setCategoryForm, s
           zIndex: 10000,
         }} onClick={() => {
           setSubCategoryForm({ open: false, data: {} });
-        }}>
-          <div style={{
+        }} className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{
             background: 'white',
             borderRadius: '12px',
             padding: '24px',
             maxWidth: '500px',
             width: '90%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
             boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
           }} onClick={(e) => e.stopPropagation()}>
             <div style={{
@@ -1975,8 +2064,8 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 10000,
-        }} onClick={handleCancelFilters}>
-          <div style={{
+        }} onClick={handleCancelFilters} className="admin-modal-overlay">
+          <div className="admin-modal-box" style={{
             background: 'white',
             borderRadius: '12px',
             padding: '24px',
@@ -3075,7 +3164,7 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="admin-settings-buttons" style={{ display: 'flex', gap: '8px' }}>
             <Button type="submit" disabled={!logoFile || uploading}>
               {uploading ? 'Uploading...' : 'Upload Logo'}
             </Button>
@@ -3143,16 +3232,16 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button type="submit" disabled={!dingFile || uploadingDing}>
-              {uploadingDing ? 'Uploading...' : 'Upload Ding Sound'}
-            </Button>
-            {currentDing && (
-              <Button variant="danger" onClick={handleDeleteDing}>
-                Delete Ding Sound
+<div className="admin-settings-buttons" style={{ display: 'flex', gap: '8px' }}>
+              <Button type="submit" disabled={!dingFile || uploadingDing}>
+                {uploadingDing ? 'Uploading...' : 'Upload Ding Sound'}
               </Button>
-            )}
-          </div>
+              {currentDing && (
+                <Button variant="danger" onClick={handleDeleteDing}>
+                  Delete Ding Sound
+                </Button>
+              )}
+            </div>
         </form>
           </div>
 

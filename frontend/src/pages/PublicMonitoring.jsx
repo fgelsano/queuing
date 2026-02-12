@@ -14,6 +14,8 @@ export default function PublicMonitoring() {
   const videoRef = useRef(null);
   const previousWindowsRef = useRef([]);
   const hasAnnouncedOnceRef = useRef(false);
+  const announcementQueueRef = useRef([]);
+  const isProcessingAnnouncementRef = useRef(false);
   const [dingSoundUrl, setDingSoundUrl] = useState(null);
   const [announcementTemplate, setAnnouncementTemplate] = useState('');
 
@@ -47,8 +49,9 @@ export default function PublicMonitoring() {
       };
 
       video.addEventListener('ended', handleEnded);
+      video.volume = 1.0;
       video.load();
-      
+
       // Try to autoplay with sound, fallback to muted autoplay
       const playPromise = video.play();
       if (playPromise !== undefined) {
@@ -191,10 +194,73 @@ export default function PublicMonitoring() {
     setTimeout(safeDone, MAX_WAIT_MS);
   };
 
+  const duckVideoVolume = (volume) => {
+    const vid = videoRef.current;
+    if (vid) vid.volume = Math.max(0, Math.min(1, volume));
+  };
+
+  const playTTSAndWait = (text) => {
+    return new Promise((resolve) => {
+      api.post('/tts', { text }, { responseType: 'arraybuffer' })
+        .then((response) => {
+          const audioData = response.data;
+          if (!audioData) {
+            resolve();
+            return;
+          }
+          const blob = new Blob([audioData], { type: 'audio/mpeg' });
+          const ttsUrl = URL.createObjectURL(blob);
+          const audio = new Audio(ttsUrl);
+          audio.addEventListener('ended', () => {
+            URL.revokeObjectURL(ttsUrl);
+            resolve();
+          });
+          audio.addEventListener('error', () => {
+            URL.revokeObjectURL(ttsUrl);
+            resolve();
+          });
+          audio.play().catch(() => resolve());
+        })
+        .catch(() => {
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.onend = resolve;
+            utterance.onerror = resolve;
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+          } else {
+            resolve();
+          }
+        });
+    });
+  };
+
+  const playDingAsync = () => {
+    return new Promise((resolve) => playDing(resolve));
+  };
+
+  const processNextAnnouncement = async () => {
+    if (isProcessingAnnouncementRef.current || announcementQueueRef.current.length === 0) return;
+    isProcessingAnnouncementRef.current = true;
+    const { text } = announcementQueueRef.current.shift();
+
+    duckVideoVolume(0.5);
+    await playDingAsync();
+    await playTTSAndWait(text);
+    duckVideoVolume(1.0);
+
+    isProcessingAnnouncementRef.current = false;
+    if (announcementQueueRef.current.length > 0) {
+      processNextAnnouncement();
+    }
+  };
+
   const handleNowServingAnnouncements = (oldWindows, newWindows) => {
     if (typeof window === 'undefined') return;
 
-    // Skip announcements on the very first successful load to avoid a burst of audio
     if (!hasAnnouncedOnceRef.current) {
       hasAnnouncedOnceRef.current = true;
       return;
@@ -207,87 +273,35 @@ export default function PublicMonitoring() {
       }
     });
 
+    const toAnnounce = [];
     (newWindows || []).forEach((w) => {
       if (!w || !w.id || !w.currentServing) return;
-
       const newQueueNumber = w.currentServing.queueNumber;
       const clientName = w.currentServing.clientName;
       const oldQueueNumber = oldMap.get(w.id);
-
-      // Announce only when the queue number for this window actually changes
       if (!newQueueNumber || newQueueNumber === oldQueueNumber) return;
 
-      const rawCounter = getQueueCounter
-        ? getQueueCounter(newQueueNumber)
-        : newQueueNumber;
-
-      // Convert "0006" -> "6" for more natural speech, but fall back gracefully
+      const rawCounter = getQueueCounter ? getQueueCounter(newQueueNumber) : newQueueNumber;
       let spokenCounter = rawCounter;
       const parsed = parseInt(rawCounter, 10);
-      if (!Number.isNaN(parsed)) {
-        spokenCounter = String(parsed);
-      }
+      if (!Number.isNaN(parsed)) spokenCounter = String(parsed);
 
       const windowLabel = w.label || 'Window';
-
       const clientNamePart = clientName ? `, or client name ${clientName}` : '';
-      const baseTemplate =
-        announcementTemplate ||
+      const baseTemplate = announcementTemplate ||
         'Window {{window}} will now serve queue number {{queueNumber}}{{clientNamePart}}.';
 
-      // Support multiple placeholder variants for flexibility:
-      // {{window}} or {{window number}}
-      // {{queueNumber}} or {{queue number}}
-      // {{clientName}} or {{client name}}
       const text = baseTemplate
         .replace(/{{\s*(window|window number)\s*}}/gi, windowLabel)
         .replace(/{{\s*(queueNumber|queue number)\s*}}/gi, spokenCounter)
         .replace(/{{\s*clientNamePart\s*}}/gi, clientNamePart)
         .replace(/{{\s*(clientName|client name)\s*}}/gi, clientName || '');
-      
-      // Start TTS fetch in parallel with ding so audio is ready at 5s
-      let ttsUrl = null;
-      let dingEnded = false;
 
-      const playTTSIfReady = () => {
-        if (!ttsUrl) return;
-        const audio = new Audio(ttsUrl);
-        audio.play().catch((err) => {
-          console.error('Failed to play TTS audio:', err);
-        }).finally(() => {
-          URL.revokeObjectURL(ttsUrl);
-        });
-      };
-
-      const onDingDone = () => {
-        dingEnded = true;
-        if (ttsUrl) playTTSIfReady();
-      };
-
-      // Fetch TTS immediately (runs in parallel with ding)
-      api.post('/tts', { text }, { responseType: 'arraybuffer' })
-        .then((response) => {
-          const audioData = response.data;
-          if (!audioData) return;
-          const blob = new Blob([audioData], { type: 'audio/mpeg' });
-          ttsUrl = URL.createObjectURL(blob);
-          if (dingEnded) playTTSIfReady();
-        })
-        .catch((error) => {
-          console.error('Cloud TTS request failed:', error);
-          if (typeof window !== 'undefined' && window.speechSynthesis) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(utterance);
-          }
-        });
-
-      // Ding plays first; at 5s (when it ends) we play TTS if ready
-      playDing(onDingDone);
+      toAnnounce.push({ text });
     });
+
+    toAnnounce.forEach((item) => announcementQueueRef.current.push(item));
+    processNextAnnouncement();
   };
 
   const loadVideos = async () => {

@@ -44,7 +44,15 @@ input, select, textarea {
   font-family: inherit;
 }
 
-/* Responsive utilities */
+/* Responsive utilities & touch targets on mobile */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
 @media (max-width: 640px) {
   .grid-responsive {
     grid-template-columns: 1fr !important;
@@ -65,4 +73,116 @@ input, select, textarea {
   .grid-responsive {
     grid-template-columns: repeat(3, 1fr) !important;
   }
+}
+
+/* Client type pill radio buttons */
+.client-type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-radio {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pill-radio input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.pill-radio:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.pill-radio.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.pill-radio.selected:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  color: white;
+}
+
+/* Checkbox group for categories / sub-concerns */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  min-height: 44px;
+}
+
+.checkbox-row input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-row .checkmark {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox-row .checkmark::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 3px;
+  opacity: 0;
+}
+
+.checkbox-row:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.checkbox-row.selected {
+  border-color: #667eea;
+  background: #eff6ff;
+}
+
+.checkbox-row.selected .checkmark {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+}
+
+.checkbox-row.selected .checkmark::after {
+  opacity: 1;
 }

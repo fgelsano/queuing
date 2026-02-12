@@ -41,15 +41,24 @@ export default function StaffLogin() {
   };
 
   return (
-    <div style={{
+    <div className="staff-login-root" style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
+      paddingLeft: 'max(20px, env(safe-area-inset-left))',
+      paddingRight: 'max(20px, env(safe-area-inset-right))',
     }}>
-      <div style={{
+      <style>{`
+        @media (max-width: 480px) {
+          .staff-login-root { padding: 16px !important; }
+          .staff-login-card { padding: 24px !important; }
+          .staff-login-title { font-size: 22px !important; }
+        }
+      `}</style>
+      <div className="staff-login-card" style={{
         background: 'white',
         borderRadius: '16px',
         padding: '40px',
@@ -60,7 +69,7 @@ export default function StaffLogin() {
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
           <Logo size="medium" />
         </div>
-        <h1 style={{
+        <h1 className="staff-login-title" style={{
           fontSize: '28px',
           fontWeight: '700',
           marginBottom: '8px',
