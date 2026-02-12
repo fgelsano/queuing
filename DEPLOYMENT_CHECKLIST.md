@@ -44,8 +44,8 @@ Use this checklist to ensure a smooth deployment.
 ## Process Management
 
 - [ ] Install PM2: `npm install -g pm2`
-- [ ] Create `ecosystem.config.js` in backend directory
-- [ ] Start application: `pm2 start ecosystem.config.js`
+- [ ] Create `ecosystem.config.cjs` in backend directory
+- [ ] Start application: `pm2 start ecosystem.config.cjs`
 - [ ] Save PM2 configuration: `pm2 save`
 - [ ] Set up PM2 startup: `pm2 startup` (follow instructions)
 - [ ] Verify app is running: `pm2 status`

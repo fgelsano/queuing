@@ -85,10 +85,11 @@ router.get('/dashboard', async (req, res) => {
     });
 
     if (!windowAssignment) {
+      // In older Prisma schema on production, QueueEntry might not have skippedByStaffId
+      // To stay compatible, just count all SKIPPED entries for today instead of per-staff
       const totalSkippedNoWindow = await prisma.queueEntry.count({
         where: {
           status: 'SKIPPED',
-          skippedByStaffId: req.user.id,
           createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
         },
       });

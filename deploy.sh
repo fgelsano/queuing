@@ -53,7 +53,7 @@ echo -e "${YELLOW}🔄 Restarting application...${NC}"
 if pm2 list | grep -q "queing-backend"; then
     pm2 restart queing-backend
 else
-    pm2 start ecosystem.config.js || pm2 start server.js --name queing-backend
+    pm2 start ecosystem.config.cjs || pm2 start server.js --name queing-backend
     pm2 save
 fi
 

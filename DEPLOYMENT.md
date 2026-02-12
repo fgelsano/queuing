@@ -160,7 +160,7 @@ Your server structure should look like:
    npm install -g pm2
    ```
 
-2. **Create PM2 ecosystem file** (`ecosystem.config.js` in backend directory):
+2. **Create PM2 ecosystem file** (`ecosystem.config.cjs` in backend directory; use `.cjs` extension because the project uses `"type": "module"`):
 
    ```javascript
    module.exports = {
@@ -189,7 +189,7 @@ Your server structure should look like:
 3. **Start the application:**
    ```bash
    cd ~/queing-backend
-   pm2 start ecosystem.config.js
+   pm2 start ecosystem.config.cjs
    pm2 save
    pm2 startup  # Follow instructions to enable auto-start on reboot
    ```
@@ -308,6 +308,26 @@ const API_BASE_URL =
    - Database: `prisma/dev.db` or PostgreSQL dump
    - Uploads folder
    - Videos folder
+
+## Database (SQLite) capacity and growth
+
+The app uses SQLite by default. SQLite supports very large databases (theoretical limit is 281 TB); in practice the limit is your disk space.
+
+**What grows over time:**
+
+- **QueueEntry** – one row per client who joins the queue (queue number, name, category, status, timestamps). Roughly 300–500 bytes per row.
+- **ServingLog** – one row per completed serve (staff, category, duration, etc.). Roughly 150–200 bytes per row.
+- **DailyCounter** – one row per day (for queue number generation). Negligible.
+- **WindowAssignment** – one row per staff–window assignment (history). Small.
+- **Admin, Staff, Window, Category, SubCategory, Settings** – mostly static; size stays small.
+
+**Rough capacity estimate:**
+
+- Light use (e.g. 100 queue entries + 100 serving logs per day): ~50 KB/day → **1 GB ≈ 50+ years**.
+- Heavy use (e.g. 1,000 entries + 1,000 logs per day): ~500 KB/day → **1 GB ≈ 5+ years**.
+- Very heavy (e.g. 10,000 of each per day): ~5 MB/day → **1 GB ≈ 7 months**.
+
+So for typical municipal or office use, a few GB of free disk is usually enough for many years. The main things to watch are disk space for the DB file, uploads (logos, sounds), and videos. For very high volume or long-term retention, consider switching to PostgreSQL (see “Alternative: Using PostgreSQL” in this guide).
 
 ## Troubleshooting
 
