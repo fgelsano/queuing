@@ -5,6 +5,24 @@ import { generateQueueNumber } from '../utils/queueNumber.js';
 
 const router = express.Router();
 
+async function resolveConcernCategories(categoryIds) {
+  if (!Array.isArray(categoryIds) || categoryIds.length === 0) return [];
+  const cats = await prisma.category.findMany({
+    where: { id: { in: categoryIds } },
+    orderBy: { name: 'asc' },
+  });
+  return cats;
+}
+
+async function resolveConcernSubCategories(subCategoryIds) {
+  if (!Array.isArray(subCategoryIds) || subCategoryIds.length === 0) return [];
+  return prisma.subCategory.findMany({
+    where: { id: { in: subCategoryIds } },
+    include: { category: true },
+    orderBy: { name: 'asc' },
+  });
+}
+
 // Helper function to auto-resolve old NOW_SERVING entries
 async function autoResolveOldServingEntries() {
   try {
@@ -41,10 +59,10 @@ async function autoResolveOldServingEntries() {
 }
 
 // Create queue entry (public, no auth required)
+// Accepts categoryIds[] and subCategoryIds[] for multi-select, or legacy categoryId/subCategoryId
 router.post('/join', [
   body('clientName').notEmpty().withMessage('Client name is required'),
   body('clientType').isIn(['REGULAR', 'SENIOR_CITIZEN', 'PWD', 'PREGNANT']).withMessage('Invalid client type'),
-  body('categoryId').notEmpty().withMessage('Category is required'),
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -52,27 +70,42 @@ router.post('/join', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { clientName, clientType, categoryId, subCategoryId } = req.body;
+    const { clientName, clientType, categoryIds, subCategoryIds, categoryId, subCategoryId } = req.body;
 
-    // Verify category exists
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-    });
+    // Support both arrays (multi-select) and single values (legacy)
+    const catIds = Array.isArray(categoryIds) && categoryIds.length > 0
+      ? categoryIds
+      : (categoryId ? [categoryId] : []);
+    const subIds = Array.isArray(subCategoryIds) && subCategoryIds.length > 0
+      ? subCategoryIds
+      : (subCategoryId ? [subCategoryId] : []);
 
-    if (!category) {
-      return res.status(400).json({ error: 'Invalid category' });
+    if (catIds.length === 0) {
+      return res.status(400).json({ error: 'At least one category is required' });
     }
 
-    // Verify subcategory if provided
-    if (subCategoryId) {
-      const subCategory = await prisma.subCategory.findUnique({
-        where: { id: subCategoryId },
-      });
+    // Verify all categories exist
+    for (const cid of catIds) {
+      const cat = await prisma.category.findUnique({ where: { id: cid } });
+      if (!cat) return res.status(400).json({ error: 'Invalid category' });
+    }
 
-      if (!subCategory || subCategory.categoryId !== categoryId) {
-        return res.status(400).json({ error: 'Invalid subcategory' });
+    // Verify subcategories belong to selected categories
+    const subCats = await prisma.subCategory.findMany({
+      where: { id: { in: subIds } },
+      include: { category: true },
+    });
+    for (const sub of subCats) {
+      if (!catIds.includes(sub.categoryId)) {
+        return res.status(400).json({ error: 'Invalid subcategory for selected categories' });
       }
     }
+    if (subIds.length > 0 && subCats.length !== subIds.length) {
+      return res.status(400).json({ error: 'Invalid subcategory' });
+    }
+
+    const primaryCategoryId = catIds[0];
+    const primarySubCategoryId = subIds[0] || null;
 
     // Generate queue number
     const queueNumber = await generateQueueNumber();
@@ -83,8 +116,10 @@ router.post('/join', [
         queueNumber,
         clientName,
         clientType,
-        categoryId,
-        subCategoryId: subCategoryId || null,
+        categoryId: primaryCategoryId,
+        subCategoryId: primarySubCategoryId,
+        concernCategoryIds: JSON.stringify(catIds),
+        concernSubCategoryIds: subIds.length > 0 ? JSON.stringify(subIds) : null,
         status: 'WAITING',
       },
       include: {
@@ -96,6 +131,8 @@ router.post('/join', [
     res.json({
       queueEntry: {
         ...queueEntry,
+        concernCategories: await resolveConcernCategories(catIds),
+        concernSubCategories: subIds.length > 0 ? await resolveConcernSubCategories(subIds) : [],
         date: new Date().toISOString().split('T')[0],
       },
     });

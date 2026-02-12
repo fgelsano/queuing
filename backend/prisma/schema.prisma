@@ -82,14 +82,16 @@ model SubCategory {
 }
 
 model QueueEntry {
-  id            String   @id @default(cuid())
-  queueNumber   String   @unique
-  clientName    String
-  clientType    String   // REGULAR, SENIOR_CITIZEN, PWD, PREGNANT
-  status        String   @default("WAITING") // WAITING, NOW_SERVING, SERVED, SKIPPED
-  categoryId    String
-  subCategoryId String?
-  windowId      String?
+  id                   String   @id @default(cuid())
+  queueNumber          String   @unique
+  clientName           String
+  clientType           String   // REGULAR, SENIOR_CITIZEN, PWD, PREGNANT
+  status               String   @default("WAITING") // WAITING, NOW_SERVING, SERVED, SKIPPED
+  categoryId           String   // Primary category for routing (first selected)
+  subCategoryId        String?
+  concernCategoryIds   String?  // JSON array of all selected category IDs
+  concernSubCategoryIds String? // JSON array of all selected subcategory IDs
+  windowId             String?
   joinedAt      DateTime @default(now())
   servedAt      DateTime?
   createdAt     DateTime @default(now())

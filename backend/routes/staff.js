@@ -5,6 +5,20 @@ import { authenticateToken, requireStaff } from '../middleware/auth.js';
 
 const router = express.Router();
 
+async function enrichQueueEntryWithConcerns(entry) {
+  let catIds = [];
+  try {
+    catIds = entry.concernCategoryIds ? JSON.parse(entry.concernCategoryIds) : (entry.categoryId ? [entry.categoryId] : []);
+  } catch { catIds = [entry.categoryId]; }
+  let subIds = [];
+  try {
+    subIds = entry.concernSubCategoryIds ? JSON.parse(entry.concernSubCategoryIds) : (entry.subCategoryId ? [entry.subCategoryId] : []);
+  } catch { subIds = entry.subCategoryId ? [entry.subCategoryId] : []; }
+  const concernCategories = catIds.length > 0 ? await prisma.category.findMany({ where: { id: { in: catIds } }, orderBy: { name: 'asc' } }) : [];
+  const concernSubCategories = subIds.length > 0 ? await prisma.subCategory.findMany({ where: { id: { in: subIds } }, include: { category: true } }) : [];
+  return { ...entry, concernCategories, concernSubCategories };
+}
+
 router.use(authenticateToken);
 router.use(requireStaff);
 
@@ -134,13 +148,13 @@ router.get('/dashboard', async (req, res) => {
     });
 
     // Combine: window entries first, then unassigned waiting entries
-    const queueEntries = [...windowEntries, ...allWaiting];
+    const combined = [...windowEntries, ...allWaiting];
+    const queueEntries = await Promise.all(combined.map(enrichQueueEntryWithConcerns));
 
     // Debug logging
     console.log(`Staff ${staffId} - Window entries: ${windowEntries.length}, Unassigned waiting: ${allWaiting.length}, Total: ${queueEntries.length}`);
 
     // Get today's stats (today already defined above)
-
     const stats = await prisma.servingLog.groupBy({
       by: ['clientType', 'categoryId'],
       where: {
@@ -346,7 +360,7 @@ router.post('/profile/change-password', async (req, res) => {
   }
 });
 
-// Start serving a client
+// Start serving a client - atomic claim to prevent race (only one staff can claim)
 router.post('/serve/:queueEntryId', async (req, res) => {
   try {
     const staffId = req.user.id;
@@ -364,20 +378,35 @@ router.post('/serve/:queueEntryId', async (req, res) => {
       return res.status(400).json({ error: 'No active window assignment' });
     }
 
-    // Update queue entry
-    const queueEntry = await prisma.queueEntry.update({
-      where: { id: queueEntryId },
+    // Atomic update: only claim if still WAITING and unassigned
+    const result = await prisma.queueEntry.updateMany({
+      where: {
+        id: queueEntryId,
+        status: 'WAITING',
+        windowId: null,
+      },
       data: {
         status: 'NOW_SERVING',
         windowId: windowAssignment.windowId,
       },
+    });
+
+    if (result.count === 0) {
+      return res.status(409).json({
+        error: 'Client was already claimed by another window. Please refresh the queue.',
+      });
+    }
+
+    const queueEntry = await prisma.queueEntry.findUnique({
+      where: { id: queueEntryId },
       include: {
         category: true,
         subCategory: true,
       },
     });
 
-    res.json({ queueEntry });
+    const enriched = await enrichQueueEntryWithConcerns(queueEntry);
+    res.json({ queueEntry: enriched });
   } catch (error) {
     console.error('Start serving error:', error);
     res.status(500).json({ error: 'Internal server error' });

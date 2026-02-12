@@ -172,6 +172,40 @@ router.put('/staff/:id', [
   }
 });
 
+// Delete staff
+router.delete('/staff/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.staff.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Staff not found' });
+    }
+
+    const servingLogCount = await prisma.servingLog.count({
+      where: { staffId: id },
+    });
+
+    if (servingLogCount > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete staff with existing serving history. Please deactivate the staff instead.',
+      });
+    }
+
+    await prisma.staff.delete({
+      where: { id },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete staff error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Reset staff password
 router.post('/staff/:id/reset-password', [
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
