@@ -923,7 +923,7 @@ export default function PublicMonitoring() {
           <div
             style={{
               position: 'absolute',
-              bottom: 12,
+              bottom: 42,
               left: 16,
               zIndex: 10,
               fontSize: '12px',
