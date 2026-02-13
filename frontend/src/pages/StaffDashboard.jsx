@@ -606,31 +606,42 @@ function QueueItem({ entry, onServe, onComplete, onSkip, servingId }) {
     }}>
       <div>
         <div style={{
-          fontSize: '18px',
-          fontWeight: '700',
-          color: '#2563eb',
-          marginBottom: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          flexWrap: 'wrap',
+          marginBottom: '6px',
         }}>
-          {entry.queueNumber}
-        </div>
-        <div style={{ fontSize: '14px', color: '#1e293b', marginBottom: '4px' }}>
-          {entry.clientName}
-        </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '18px',
+            fontWeight: '700',
+            color: '#2563eb',
+          }}>
+            {entry.queueNumber}
+          </span>
+          <span style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
+            color: '#1e293b',
+            textTransform: 'uppercase',
+          }}>
+            {entry.clientName}
+          </span>
           <ClientTypeBadge clientType={entry.clientType} />
-          <span style={{ fontSize: '12px', color: '#64748b' }}>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', fontSize: '14px' }}>
+          <span style={{ color: '#64748b' }}>
             {(entry.concernCategories?.length ? entry.concernCategories : entry.category ? [entry.category] : []).map((c) => c?.name).filter(Boolean).join(', ')}
             {((entry.concernSubCategories?.length ? entry.concernSubCategories : entry.subCategory ? [entry.subCategory] : []).map((s) => s?.name).filter(Boolean).length > 0) && ` - ${(entry.concernSubCategories?.length ? entry.concernSubCategories : [entry.subCategory]).map((s) => s?.name).filter(Boolean).join(', ')}`}
           </span>
-        </div>
-        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-          Joined: {new Date(entry.joinedAt).toLocaleTimeString()}
+          <span style={{ color: '#94a3b8' }}>
+            Joined: {new Date(entry.joinedAt).toLocaleTimeString()}
+          </span>
         </div>
       </div>
       <div className="queue-item-buttons" style={{ 
         display: 'flex', 
-        gap: '8px', 
-        flexDirection: 'column',
+        gap: '8px',
       }}>
         {!isServing ? (
           <Button

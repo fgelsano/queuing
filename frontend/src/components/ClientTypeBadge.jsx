@@ -1,8 +1,8 @@
 export default function ClientTypeBadge({ clientType }) {
   const styles = {
     REGULAR: { bg: '#e2e8f0', color: '#475569' },
-    SENIOR_CITIZEN: { bg: '#fef3c7', color: '#92400e' },
-    PWD: { bg: '#dbeafe', color: '#1e40af' },
+    SENIOR_CITIZEN: { bg: '#fee2e2', color: '#991b1b' },
+    PWD: { bg: '#ffedd5', color: '#c2410c' },
     PREGNANT: { bg: '#fce7f3', color: '#9f1239' },
   };
 
@@ -25,7 +25,7 @@ export default function ClientTypeBadge({ clientType }) {
       backgroundColor: style.bg,
       color: style.color,
     }}>
-      {labels[clientType]}
+      {labels[clientType] || 'Regular'}
     </span>
   );
 }
