@@ -12,6 +12,7 @@ import categoryRoutes from './routes/categories.js';
 import settingsRoutes from './routes/settings.js';
 import staffProfileRoutes from './routes/staffProfile.js';
 import ttsRoutes from './routes/tts.js';
+import { getHourInManila, isPastStaffLogoutTime } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -49,6 +50,17 @@ app.use('/api/tts', ttsRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Debug: verify staff logout time logic (remove after troubleshooting)
+app.get('/api/debug/staff-logout', (req, res) => {
+  const hour = getHourInManila();
+  const hideStaff = isPastStaffLogoutTime();
+  res.json({
+    manilaHour: hour,
+    hideStaff,
+    message: hideStaff ? 'Staff cards should be hidden on monitor' : 'Staff cards should be visible',
+  });
 });
 
 app.listen(PORT, () => {

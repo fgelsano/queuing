@@ -4,12 +4,14 @@ const STAFF_LOGOUT_HOUR = 18; // 6pm
 const TIMEZONE = 'Asia/Manila';
 
 export function getHourInManila() {
-  const hourStr = new Date().toLocaleString('en-US', {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: TIMEZONE,
-    hour: 'numeric',
+    hour: '2-digit',
     hour12: false,
   });
-  return parseInt(hourStr, 10) || 0;
+  const parts = formatter.formatToParts(new Date());
+  const hourPart = parts.find((p) => p.type === 'hour');
+  return parseInt(hourPart?.value ?? '0', 10) || 0;
 }
 
 export function isPastStaffLogoutTime() {
