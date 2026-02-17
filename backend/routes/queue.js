@@ -257,7 +257,9 @@ router.get('/public/windows', async (req, res) => {
       };
     });
 
+    const visibleCount = windowsData.filter((w) => w.staff != null).length;
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('X-Staff-Cards-Visible', String(visibleCount));
     res.json({ windows: windowsData });
   } catch (error) {
     console.error('Get active windows error:', error);

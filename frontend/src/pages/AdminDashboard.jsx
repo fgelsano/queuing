@@ -1015,26 +1015,29 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog,
                 fontSize: '12px',
                 color: '#64748b',
               }}>
-                <span style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: (() => {
-                    const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
-                    const idleMs = (staffIdleMinutes || 15) * 60 * 1000;
-                    const threshold = Date.now() - idleMs;
-                    return lastSeen >= threshold ? '#22c55e' : '#94a3b8';
-                  })(),
-                  flexShrink: 0,
-                }} />
-                <span>
-                  {(() => {
-                    const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
-                    const idleMs = (staffIdleMinutes || 15) * 60 * 1000;
-                    const threshold = Date.now() - idleMs;
-                    return lastSeen >= threshold ? 'Online' : 'Offline';
-                  })()}
-                </span>
+                {(() => {
+                  const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
+                  const idleMs = (staffIdleMinutes || 15) * 60 * 1000;
+                  const loggedOutMs = 120 * 60 * 1000; // 2 hours = logged out
+                  const now = Date.now();
+                  let status, color;
+                  if (lastSeen === 0 || lastSeen < now - loggedOutMs) {
+                    status = 'Logged Out';
+                    color = '#94a3b8';
+                  } else if (lastSeen < now - idleMs) {
+                    status = 'Idle';
+                    color = '#f59e0b';
+                  } else {
+                    status = 'Logged In';
+                    color = '#22c55e';
+                  }
+                  return (
+                    <>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0 }} />
+                      <span>{status}</span>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Specializations Badges */}
