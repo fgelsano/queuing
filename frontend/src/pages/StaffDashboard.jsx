@@ -170,20 +170,29 @@ export default function StaffDashboard() {
   };
 
   const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    const base = window.location.origin;
+
     try {
-      const windowAssignment = await api.get('/staff/dashboard').then(res => res.data.window);
+      const dashRes = await api.get('/staff/dashboard', { skipRedirect: true }).catch(() => ({ data: { window: null } }));
+      const windowAssignment = dashRes?.data?.window;
       if (windowAssignment) {
-        await api.post('/staff/assign-window', { windowId: null });
+        await api.post('/staff/assign-window', { windowId: null }, { skipRedirect: true });
       }
-      await api.post('/staff/logout');
+      await api.post('/staff/logout', {}, { skipRedirect: true });
     } catch (error) {
       console.error('Error on logout:', error);
-      try { await api.post('/staff/logout'); } catch (_) {}
+      try {
+        await fetch(`${base}/api/staff/logout`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (_) {}
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/staff/login');
     }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/staff/login');
   };
 
   const handleProfileClick = () => {

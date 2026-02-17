@@ -79,7 +79,7 @@ export default function AdminDashboard() {
       if (activeTab === 'staff') {
         loadStaff();
       }
-    }, 30000); // Refresh staff list every 30s so online/offline indicator updates
+    }, 5000); // Refresh staff list every 5s so Online/Idle/Offline updates quickly
     return () => {
       clearInterval(dashboardInterval);
       clearInterval(staffInterval);

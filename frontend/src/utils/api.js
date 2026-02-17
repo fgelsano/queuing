@@ -23,8 +23,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
+    const skipRedirect = error.config?.skipRedirect === true;
 
-    if (status === 401 || status === 403) {
+    if ((status === 401 || status === 403) && !skipRedirect) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       const currentPath = window.location.pathname;
