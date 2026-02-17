@@ -3,15 +3,28 @@ import jwt from 'jsonwebtoken';
 const STAFF_LOGOUT_HOUR = 18; // 6pm
 const TIMEZONE = 'Asia/Manila';
 
+const MANILA_UTC_OFFSET_HOURS = 8;
+
 export function getHourInManila() {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: TIMEZONE,
-    hour: '2-digit',
-    hour12: false,
-  });
-  const parts = formatter.formatToParts(new Date());
-  const hourPart = parts.find((p) => p.type === 'hour');
-  return parseInt(hourPart?.value ?? '0', 10) || 0;
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: TIMEZONE,
+      hour: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hourPart = parts.find((p) => p.type === 'hour');
+    const hour = parseInt(hourPart?.value ?? '0', 10);
+    if (Number.isFinite(hour) && hour >= 0 && hour <= 23) return hour;
+  } catch (e) {
+    console.warn('[auth] Intl timezone failed, using UTC+8 fallback:', e.message);
+  }
+  // Fallback: Manila is UTC+8 (no DST)
+  const now = new Date();
+  let manilaHour = now.getUTCHours() + MANILA_UTC_OFFSET_HOURS;
+  if (manilaHour >= 24) manilaHour -= 24;
+  if (manilaHour < 0) manilaHour += 24;
+  return manilaHour;
 }
 
 export function isPastStaffLogoutTime() {

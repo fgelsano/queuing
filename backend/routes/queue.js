@@ -231,6 +231,7 @@ router.get('/public/windows', async (req, res) => {
       currentServing: window.queueEntries[0] || null,
     }));
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.json({ windows: windowsData });
   } catch (error) {
     console.error('Get active windows error:', error);
