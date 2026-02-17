@@ -1022,13 +1022,13 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog,
                   const now = Date.now();
                   let status, color;
                   if (lastSeen === 0 || lastSeen < now - loggedOutMs) {
-                    status = 'Logged Out';
+                    status = 'Offline';
                     color = '#94a3b8';
                   } else if (lastSeen < now - idleMs) {
                     status = 'Idle';
                     color = '#f59e0b';
                   } else {
-                    status = 'Logged In';
+                    status = 'Online';
                     color = '#22c55e';
                   }
                   return (
