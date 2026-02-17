@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db.js';
-import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { authenticateToken, requireAdmin, isPastStaffLogoutTime } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -738,23 +738,58 @@ router.get('/dashboard', async (req, res) => {
 
     const [
       totalStaff,
-      activeStaff,
       totalWindows,
-      activeWindows,
       todayQueueEntries,
       todayServed,
       waitingCount,
       servingCount,
+      staffWithLastSeen,
+      windowAssignments,
+      idleSetting,
     ] = await Promise.all([
       prisma.staff.count(),
-      prisma.staff.count({ where: { isActive: true } }),
       prisma.window.count(),
-      prisma.window.count({ where: { isActive: true } }),
       prisma.queueEntry.count({ where: { createdAt: { gte: today } } }),
       prisma.servingLog.count({ where: { servedAt: { gte: today } } }),
       prisma.queueEntry.count({ where: { status: 'WAITING', createdAt: { gte: today } } }),
       prisma.queueEntry.count({ where: { status: 'NOW_SERVING', createdAt: { gte: today } } }),
+      prisma.staff.findMany({ where: { isActive: true }, select: { id: true, lastSeenAt: true } }),
+      prisma.windowAssignment.findMany({
+        where: { isActive: true, window: { isActive: true } },
+        select: { staffId: true, windowId: true },
+      }),
+      prisma.settings.findUnique({ where: { key: 'staff_idle_minutes' } }),
     ]);
+
+    const staffIdleMinutes = (() => {
+      const v = idleSetting?.value;
+      const parsed = v != null ? parseInt(String(v), 10) : NaN;
+      return Number.isFinite(parsed) && parsed >= 1 && parsed <= 120 ? parsed : 15;
+    })();
+
+    const pastLogoutTime = isPastStaffLogoutTime();
+    const idleThresholdMs = staffIdleMinutes * 60 * 1000;
+    const now = Date.now();
+
+    const activeStaffIds = new Set();
+    if (!pastLogoutTime) {
+      for (const s of staffWithLastSeen) {
+        const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
+        if (lastSeen >= now - idleThresholdMs) {
+          activeStaffIds.add(s.id);
+        }
+      }
+    }
+
+    const activeWindowIds = new Set();
+    for (const a of windowAssignments) {
+      if (activeStaffIds.has(a.staffId)) {
+        activeWindowIds.add(a.windowId);
+      }
+    }
+
+    const activeStaff = activeStaffIds.size;
+    const activeWindows = activeWindowIds.size;
 
     res.json({
       stats: {
