@@ -22,6 +22,18 @@ async function enrichQueueEntryWithConcerns(entry) {
 router.use(authenticateToken);
 router.use(requireStaff);
 
+// Staff logout - clears lastSeenAt so they show as Offline immediately
+router.post('/logout', async (req, res) => {
+  try {
+    const staffId = req.user.id;
+    await prisma.staff.update({ where: { id: staffId }, data: { lastSeenAt: null } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Staff logout error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Helper function to auto-resolve old NOW_SERVING entries
 async function autoResolveOldServingEntries() {
   try {
@@ -236,8 +248,9 @@ router.post('/assign-window', async (req, res) => {
       },
     });
 
-    // If windowId is null, just deactivate (logout scenario)
+    // If windowId is null, just deactivate (logout scenario) and clear lastSeenAt
     if (!windowId) {
+      await prisma.staff.update({ where: { id: staffId }, data: { lastSeenAt: null } });
       return res.json({ success: true, assignment: null });
     }
 

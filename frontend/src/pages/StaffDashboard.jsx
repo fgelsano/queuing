@@ -171,13 +171,14 @@ export default function StaffDashboard() {
 
   const handleLogout = async () => {
     try {
-      // Deactivate all window assignments for this staff
       const windowAssignment = await api.get('/staff/dashboard').then(res => res.data.window);
       if (windowAssignment) {
         await api.post('/staff/assign-window', { windowId: null });
       }
+      await api.post('/staff/logout');
     } catch (error) {
-      console.error('Error deactivating window on logout:', error);
+      console.error('Error on logout:', error);
+      try { await api.post('/staff/logout'); } catch (_) {}
     }
     
     localStorage.removeItem('token');
