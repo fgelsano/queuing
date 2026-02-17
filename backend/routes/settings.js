@@ -309,7 +309,7 @@ router.get('/video-volume', async (req, res) => {
     const setting = await prisma.settings.findUnique({
       where: { key: 'video_volume_percent' },
     });
-    let value = 5;
+    let value = 1;
     if (setting?.value != null) {
       const parsed = parseInt(String(setting.value), 10);
       if (!Number.isNaN(parsed)) {

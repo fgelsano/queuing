@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const STAFF_LOGOUT_HOUR = 21; // 9pm
+const STAFF_LOGOUT_HOUR = 18; // 6pm
 const TIMEZONE = 'Asia/Manila';
 
 export function getHourInManila() {
@@ -12,7 +12,7 @@ export function getHourInManila() {
   return parseInt(hourStr, 10) || 0;
 }
 
-function isPastStaffLogoutTime() {
+export function isPastStaffLogoutTime() {
   return getHourInManila() >= STAFF_LOGOUT_HOUR;
 }
 
@@ -30,8 +30,8 @@ export const authenticateToken = (req, res, next) => {
     }
     if (user.role === 'STAFF' && isPastStaffLogoutTime()) {
       return res.status(401).json({
-        error: 'Automatic logout: staff sessions end at 9pm',
-        code: 'STAFF_LOGOUT_9PM',
+        error: 'Automatic logout: staff sessions end at 6pm',
+        code: 'STAFF_LOGOUT_6PM',
       });
     }
     req.user = user;

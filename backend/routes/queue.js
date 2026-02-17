@@ -2,6 +2,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import prisma from '../db.js';
 import { generateQueueNumber } from '../utils/queueNumber.js';
+import { isPastStaffLogoutTime } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -222,10 +223,11 @@ router.get('/public/windows', async (req, res) => {
       },
     });
 
+    const hideStaff = isPastStaffLogoutTime();
     const windowsData = windows.map(window => ({
       id: window.id,
       label: window.label,
-      staff: window.assignments[0]?.staff || null,
+      staff: hideStaff ? null : (window.assignments[0]?.staff || null),
       currentServing: window.queueEntries[0] || null,
     }));
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import prisma from '../db.js';
+import { isPastStaffLogoutTime } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -34,10 +35,11 @@ router.get('/active', async (req, res) => {
       },
     });
 
+    const hideStaff = isPastStaffLogoutTime();
     const windowsData = windows.map((window) => ({
       id: window.id,
       label: window.label,
-      staff: window.assignments[0]?.staff || null,
+      staff: hideStaff ? null : (window.assignments[0]?.staff || null),
       currentServing: window.queueEntries[0] || null,
     }));
 

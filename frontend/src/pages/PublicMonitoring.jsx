@@ -25,13 +25,13 @@ export default function PublicMonitoring() {
   const lastAnnouncedKeyRef = useRef(null);
   const lastAnnouncedTimeRef = useRef(0);
   const COLLISION_WINDOW_MS = 8000;
-  const DEFAULT_VIDEO_VOLUME = 0.05;
+  const DEFAULT_VIDEO_VOLUME = 0.01;
   const [dingSoundUrl, setDingSoundUrl] = useState(null);
   const dingSoundUrlRef = useRef(null);
   const audioUnlockedRef = useRef(false);
   const audioContextRef = useRef(null);
   const [showUnlockOverlay, setShowUnlockOverlay] = useState(false);
-  const [videoVolumePercent, setVideoVolumePercent] = useState(5); // 0–100 default
+  const [videoVolumePercent, setVideoVolumePercent] = useState(1); // 0–100 default
 
   useEffect(() => {
     loadData();

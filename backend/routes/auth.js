@@ -34,10 +34,10 @@ router.post('/staff/login', [
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (getHourInManila() >= 21) {
+    if (getHourInManila() >= 18) {
       return res.status(401).json({
-        error: 'Staff login is not available after 9pm. Please try again tomorrow.',
-        code: 'STAFF_LOGOUT_9PM',
+        error: 'Staff login is not available after 6pm. Please try again tomorrow.',
+        code: 'STAFF_LOGOUT_6PM',
       });
     }
 

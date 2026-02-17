@@ -52,11 +52,11 @@ export default function WindowCard({ window, compact = false }) {
         overflow: 'hidden',
       }}
     >
-      {/* Left: Staff profile picture – minHeight 0 + overflow hidden so image never drives card height; card height comes from parent (20vh or flex share) */}
+      {/* Left: Staff profile picture with window number overlay at bottom */}
       <div
         style={{
-          flex: '0 0 34%',
-          maxWidth: '110px',
+          flex: compact ? '0 0 28%' : '0 0 34%',
+          maxWidth: compact ? '70px' : '110px',
           minHeight: 0,
           overflow: 'hidden',
           borderRadius: '12px',
@@ -66,6 +66,7 @@ export default function WindowCard({ window, compact = false }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          position: 'relative',
         }}
       >
         {staff?.profilePicture ? (
@@ -85,12 +86,32 @@ export default function WindowCard({ window, compact = false }) {
             style={{
               color: 'white',
               fontWeight: '700',
-              fontSize: '24px',
+              fontSize: compact ? '18px' : '24px',
             }}
           >
             {getInitials(staffName)}
           </span>
         )}
+        {/* Window number overlay at bottom of staff picture */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: compact ? '2px 4px' : '4px 6px',
+            background: 'rgba(0,0,0,0.65)',
+            color: '#38bdf8',
+            fontSize: compact ? '12px' : '16px',
+            fontWeight: '700',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {label}
+        </div>
       </div>
 
       {/* Right: Text block */}
@@ -100,19 +121,21 @@ export default function WindowCard({ window, compact = false }) {
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
-          padding: '6px 8px 6px 8px',
+          padding: compact ? '4px 6px 4px 6px' : '6px 8px 6px 8px',
         }}
       >
-        {/* Staff name */}
+        {/* Staff name - allow 2 lines to avoid cut-off */}
         <div
           style={{
-            fontSize: '18px',
+            fontSize: compact ? '13px' : '18px',
             fontWeight: '700',
             color: '#e5e7eb',
             marginBottom: '2px',
-            whiteSpace: 'nowrap',
+            lineHeight: 1.2,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            textOverflow: 'ellipsis',
           }}
         >
           {staffName}
@@ -122,17 +145,17 @@ export default function WindowCard({ window, compact = false }) {
           <>
             <div
               style={{
-                fontSize: '11px',
+                fontSize: compact ? '9px' : '11px',
                 fontWeight: '700',
                 color: '#cbd5f5',
-                marginBottom: '4px',
+                marginBottom: '2px',
               }}
             >
               is now serving:
             </div>
             <div
               style={{
-                fontSize: 'clamp(22px, 2.8vw, 34px)',
+                fontSize: compact ? 'clamp(18px, 2.8vh, 28px)' : 'clamp(28px, 3.5vw, 44px)',
                 fontWeight: '700',
                 color: '#fbbf24',
                 lineHeight: 1.05,
@@ -147,11 +170,15 @@ export default function WindowCard({ window, compact = false }) {
             {clientLine && (
               <div
                 style={{
-                  fontSize: '11px',
+                  marginTop: 'auto',
+                  paddingTop: '4px',
+                  fontSize: compact ? '10px' : '13px',
                   fontWeight: '600',
                   color: '#cbd5f5',
-                  marginBottom: '4px',
-                  maxHeight: '2.6em',
+                  lineHeight: 1.2,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
                 }}
               >
@@ -162,7 +189,7 @@ export default function WindowCard({ window, compact = false }) {
         ) : (
           <div
             style={{
-              fontSize: '11px',
+              fontSize: compact ? '9px' : '11px',
               fontWeight: '600',
               color: '#64748b',
               fontStyle: 'italic',
@@ -171,22 +198,6 @@ export default function WindowCard({ window, compact = false }) {
             No active service
           </div>
         )}
-
-        {/* Window number at bottom */}
-        <div
-          style={{
-            marginTop: 'auto',
-            paddingTop: '2px',
-            fontSize: '20px',
-            fontWeight: '700',
-            color: '#38bdf8',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {label}
-        </div>
       </div>
     </div>
   );

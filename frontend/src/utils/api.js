@@ -39,7 +39,7 @@ api.interceptors.response.use(
       } else if (currentPath.startsWith("/staff")) {
         if (currentPath !== "/staff/login") {
           const code = error.response?.data?.code;
-          const query = code === "STAFF_LOGOUT_9PM" ? "?reason=logout_9pm" : "";
+          const query = code === "STAFF_LOGOUT_6PM" ? "?reason=logout_6pm" : "";
           window.location.href = "/staff/login" + query;
         }
       }
