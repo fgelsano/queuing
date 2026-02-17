@@ -191,7 +191,7 @@ export default function StaffDashboard() {
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      navigate('/staff/login');
+      window.location.href = '/staff/login';
     }
   };
 
