@@ -52,7 +52,7 @@ export default function AdminDashboard() {
     endHour: '',
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [staffIdleMinutes, setStaffIdleMinutes] = useState(5);
+  const [staffIdleMinutes, setStaffIdleMinutes] = useState(15);
 
   // Form states
   const [staffForm, setStaffForm] = useState({ open: false, data: {} });
@@ -611,7 +611,7 @@ function StatCard({ label, value, color = '#2563eb', icon: Icon }) {
   );
 }
 
-function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog, staffIdleMinutes = 5 }) {
+function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog, staffIdleMinutes = 15 }) {
   const [editing, setEditing] = useState(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const dropdownRef = useRef(null);
@@ -1021,7 +1021,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog,
                   borderRadius: '50%',
                   background: (() => {
                     const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
-                    const idleMs = (staffIdleMinutes || 5) * 60 * 1000;
+                    const idleMs = (staffIdleMinutes || 15) * 60 * 1000;
                     const threshold = Date.now() - idleMs;
                     return lastSeen >= threshold ? '#22c55e' : '#94a3b8';
                   })(),
@@ -1030,7 +1030,7 @@ function StaffTab({ staff, categories, onRefresh, form, setForm, setInputDialog,
                 <span>
                   {(() => {
                     const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt).getTime() : 0;
-                    const idleMs = (staffIdleMinutes || 5) * 60 * 1000;
+                    const idleMs = (staffIdleMinutes || 15) * 60 * 1000;
                     const threshold = Date.now() - idleMs;
                     return lastSeen >= threshold ? 'Online' : 'Offline';
                   })()}
@@ -2738,7 +2738,7 @@ function ReportsTab({ reports, filters, setFilters, staff, categories, showFilte
   );
 }
 
-function SettingsTab({ staffIdleMinutes = 5, onStaffIdleMinutesSaved }) {
+function SettingsTab({ staffIdleMinutes = 15, onStaffIdleMinutesSaved }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [currentLogo, setCurrentLogo] = useState(null);

@@ -394,7 +394,7 @@ router.get('/staff-idle-minutes', authenticateToken, requireAdmin, async (req, r
     const setting = await prisma.settings.findUnique({
       where: { key: 'staff_idle_minutes' },
     });
-    let value = 5;
+    let value = 15;
     if (setting?.value != null) {
       const parsed = parseInt(String(setting.value), 10);
       if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 120) {
