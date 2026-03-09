@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Play, CheckCircle, XCircle, SkipForward } from 'lucide-react';
 import api, { getStoredUser } from '../utils/api';
@@ -15,7 +14,6 @@ import ConfirmDialog from '../components/ConfirmDialog';
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function StaffDashboard() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [window, setWindow] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -31,7 +29,7 @@ export default function StaffDashboard() {
     const token = localStorage.getItem('token');
     const user = getStoredUser();
     if (!token || user?.role !== 'STAFF') {
-      navigate('/staff/login');
+      window.location.href = '/staff/login';
       return;
     }
 
@@ -39,7 +37,7 @@ export default function StaffDashboard() {
     loadWindows();
     const interval = setInterval(loadDashboard, 3000);
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (dateRange) {
@@ -61,7 +59,7 @@ export default function StaffDashboard() {
     } catch (error) {
       console.error('Failed to load dashboard:', error);
       if (error.response?.status === 401) {
-        navigate('/staff/login');
+        window.location.href = '/staff/login';
       }
     } finally {
       setLoading(false);
@@ -196,7 +194,7 @@ export default function StaffDashboard() {
   };
 
   const handleProfileClick = () => {
-    navigate('/staff/profile');
+    window.location.href = '/staff/profile';
   };
 
   if (loading) {

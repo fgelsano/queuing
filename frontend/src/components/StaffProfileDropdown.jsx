@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { UserCircle, LogOut } from 'lucide-react';
 import api from '../utils/api';
 
@@ -146,7 +145,10 @@ export default function StaffProfileDropdown({ onProfileClick, onLogout }) {
           <button
             onClick={() => {
               setIsOpen(false);
-              onLogout();
+              Promise.resolve(onLogout?.()).catch((e) => {
+                console.error('Logout error:', e);
+                window.location.href = '/staff/login';
+              });
             }}
             style={{
               width: '100%',

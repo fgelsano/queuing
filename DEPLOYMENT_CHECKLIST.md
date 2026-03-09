@@ -2,6 +2,22 @@
 
 Use this checklist to ensure a smooth deployment.
 
+---
+
+## Quick Update (Existing Deployment)
+
+When deploying code changes to an already-running site:
+
+- [ ] **Local:** Build frontend: `cd frontend && npm run build`
+- [ ] **Server:** SSH in and run `git pull` (or upload changed files)
+- [ ] **Server:** Restart backend: `pm2 restart queing-backend`
+- [ ] **Server:** Upload `frontend/dist/` contents to `public_html/` (index.html + assets/)
+- [ ] **Cloudflare (if used):** Purge cache or ensure Cache Rules bypass `/api/*`
+- [ ] **Verify:** Hard refresh browser (Ctrl+Shift+R / Cmd+Shift+R)
+- [ ] **Verify:** Check `X-Staff-Cards-Visible` header on `/api/queue/public/windows` if debugging monitor
+
+---
+
 ## Pre-Deployment
 
 - [ ] Test application locally
@@ -63,6 +79,12 @@ Use this checklist to ensure a smooth deployment.
 - [ ] Install SSL certificate in cPanel
 - [ ] Force HTTPS redirect in `.htaccess`
 - [ ] Test HTTPS access
+
+## Cloudflare (if used)
+
+- [ ] Add Cache Rule: bypass cache for `*yourdomain.com/api/*`
+- [ ] Purge cache after deployments: Caching → Purge Everything (or Custom Purge)
+- [ ] Verify API responses are fresh (check `X-Staff-Cards-Visible` header)
 
 ## Testing
 

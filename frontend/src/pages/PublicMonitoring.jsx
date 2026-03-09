@@ -698,11 +698,12 @@ export default function PublicMonitoring() {
       if (!Number.isNaN(parsed)) spokenCounter = String(parsed);
 
       const windowLabel = w.label || 'Window';
-      const clientNamePart = clientName ? `, ${clientName}` : '';
+      const displayLabel = (windowLabel || 'Window').replace(/\bWindow\b/gi, 'Counter');
+      const clientNamePart = clientName ? `${clientName}, ` : '';
       // Hardcoded Cebuano announcement template
-      const template = 'Ang atong {{window}},... mu assist na sa kyu number, {{queueNumber}}. {{clientNamePart}}, please proceed to {{window}}.';
+      const template = 'Ang atong {{window}}, mu assist na sa kyu number, {{queueNumber}},... {{clientNamePart}}Please proceed to {{window}}.';
       const text = template
-        .replace(/{{\s*window\s*}}/gi, windowLabel)
+        .replace(/{{\s*window\s*}}/gi, displayLabel)
         .replace(/{{\s*queueNumber\s*}}/gi, spokenCounter)
         .replace(/{{\s*clientNamePart\s*}}/gi, clientNamePart);
 
